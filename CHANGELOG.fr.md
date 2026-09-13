@@ -2,6 +2,18 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.8.2 — 13 septembre 2026
+
+### Documentation
+
+- README réécrit pour correspondre au plugin actuel (éditeur, suppression,
+  variables facultatives, stockage, pop-ups Bubble Card, prérequis) ; retrait
+  des fonctions qui n'existent plus (import decluttering-card en un clic, partir
+  d'une carte du dashboard).
+- Nouvelle illustration de l'éditeur actuel dans le README.
+- Version minimale de Home Assistant fixée à **2026.6.0** dans `hacs.json` : le
+  plugin s'appuie sur des fonctions d'édition des versions récentes.
+
 ## 1.8.1 — 13 septembre 2026
 
 ### Corrections

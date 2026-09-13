@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.8.1";
+  const VERSION = "1.8.2";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";

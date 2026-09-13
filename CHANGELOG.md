@@ -2,6 +2,18 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.8.2 — 13 September 2026
+
+### Documentation
+
+- README rewritten to match the current plugin (editor, deleting, optional
+  variables, storage, Bubble Card pop-ups, requirements); removed features
+  that no longer exist (one-click decluttering-card import, starting from a card
+  of the dashboard).
+- New README illustration of the current editor.
+- Minimum Home Assistant version set to **2026.6.0** in `hacs.json`: the plugin
+  relies on editor features of recent Home Assistant releases.
+
 ## 1.8.1 — 13 September 2026
 
 ### Fixes
