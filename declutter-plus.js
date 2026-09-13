@@ -6,11 +6,15 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.3.0";
+  const VERSION = "1.4.0";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
   const ROW_TAG = "declutter-plus-row";
+  const GRID_TAG = "declutter-plus-grid";
+  const GRID_TYPE = "custom:" + GRID_TAG;
+  const GRID_COLUMNS = 12;
+  const GRID_REFRESH_MS = [50, 300, 1000];
   const EDITOR_TAG = "declutter-plus-card-editor";
   const SHARED_DASHBOARD = "declutter-plus";
   const SHARED_TITLE = "Declutter Plus – Templates";
@@ -986,6 +990,7 @@
   function draftFromCard(card, name, scope) {
     const gridOptions = isObject(card.grid_options) ? clone(card.grid_options) : null;
     const config = cleanCard(card);
+    delete config.grid_options;
     delete config.visibility;
     const vars = [];
     if (typeof config.entity === "string" && config.entity) vars.push({ name: "entity", path: ["entity"], label: "" });
@@ -1034,17 +1039,18 @@
     return raw;
   }
 
-  // Un template à plusieurs cartes est stocké en vertical-stack (carte native).
+  // Un template à plusieurs cartes est stocké en grille Declutter Plus (12 colonnes,
+  // comme une section) ; les anciens vertical-stack restent lus comme des listes.
   function isStack(card) {
-    return isObject(card) && card.type === "vertical-stack" && Array.isArray(card.cards);
+    return isObject(card) && (card.type === GRID_TYPE || card.type === "vertical-stack") && Array.isArray(card.cards);
   }
 
+  // grid_options est gardé : il fixe la largeur de la carte dans la grille.
   function cleanCard(card) {
     const out = clone(card);
     if (isObject(out)) {
       delete out.view_layout;
       delete out.layout_options;
-      delete out.grid_options;
     }
     return out;
   }
@@ -1054,8 +1060,11 @@
   }
 
   function ensureStack(ed) {
-    if (isStack(ed.card)) return;
-    ed.card = { type: "vertical-stack", cards: [ed.card] };
+    if (isStack(ed.card)) {
+      ed.card.type = GRID_TYPE;
+      return;
+    }
+    ed.card = { type: GRID_TYPE, cards: [ed.card] };
     ed.vars.forEach(function (v) {
       v.path = ["cards", 0].concat(v.path);
     });
@@ -1077,8 +1086,14 @@
   }
 
   function replaceDraftCard(ed, index, card) {
-    if (isStack(ed.card)) ed.card.cards[index] = cleanCard(card);
-    else ed.card = cleanCard(card);
+    if (isStack(ed.card)) {
+      ed.card.cards[index] = cleanCard(card);
+    } else {
+      // carte unique : sa taille est celle du template
+      ed.card = cleanCard(card);
+      if (isObject(ed.card.grid_options)) ed.grid_options = ed.card.grid_options;
+      delete ed.card.grid_options;
+    }
     ed.vars = ed.vars.filter(function (v) {
       return getPath(ed.card, v.path) !== undefined;
     });
@@ -1087,6 +1102,7 @@
   // Retire une carte ; false si c'était la dernière.
   function removeDraftCard(ed, index) {
     if (!isStack(ed.card) || ed.card.cards.length <= 1) return false;
+    ed.card.type = GRID_TYPE;
     ed.vars = ed.vars.filter(function (v) {
       return !(v.path[0] === "cards" && Number(v.path[1]) === index);
     });
@@ -1094,10 +1110,18 @@
     shiftVars(ed, index + 1, -1);
     if (ed.card.cards.length === 1) {
       ed.card = ed.card.cards[0];
+      delete ed.card.grid_options;
       ed.vars.forEach(function (v) {
         v.path = v.path.slice(2);
       });
     }
+    return true;
+  }
+
+  function resizeDraftCard(ed, index, gridOptions) {
+    const card = isStack(ed.card) ? ed.card.cards[index] : null;
+    if (!isObject(card) || !isObject(gridOptions)) return false;
+    card.grid_options = Object.assign({}, card.grid_options, gridOptions);
     return true;
   }
 
@@ -1132,6 +1156,112 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Grille à 12 colonnes (comme une section de HA)
+
+  const GRID_STYLE =
+    ".dp-grid{display:grid;grid-template-columns:repeat(" + GRID_COLUMNS + ",minmax(0,1fr));" +
+    "gap:var(--row-gap,8px) var(--column-gap,8px);align-items:start}" +
+    ".dp-cell{position:relative;min-width:0;grid-column:span " + GRID_COLUMNS + "}" +
+    ".dp-cell>*{display:block}";
+
+  // Largeur : grid_options de la carte, sinon getGridOptions() de la carte, sinon pleine largeur.
+  function gridColumns(config, el) {
+    let columns = isObject(config) && isObject(config.grid_options) ? config.grid_options.columns : undefined;
+    if (columns === undefined && el) {
+      try {
+        const options = typeof el.getGridOptions === "function" ? el.getGridOptions() : null;
+        if (options) columns = options.columns;
+      } catch (e) {}
+    }
+    if (columns === undefined || columns === null || columns === "full") return GRID_COLUMNS;
+    columns = Math.round(Number(columns));
+    return isFinite(columns) ? Math.max(1, Math.min(GRID_COLUMNS, columns)) : GRID_COLUMNS;
+  }
+
+  // Les cartes chargées à la demande ne connaissent leur taille qu'une fois définies.
+  function layoutGrid(cells) {
+    const apply = function () {
+      cells.forEach(function (cell) {
+        cell.el.style.gridColumn = "span " + gridColumns(cell.config, cell.card);
+      });
+    };
+    apply();
+    GRID_REFRESH_MS.forEach(function (ms) {
+      setTimeout(apply, ms);
+    });
+  }
+
+  class DeclutterPlusGrid extends HTMLElement {
+    constructor() {
+      super();
+      this._config = null;
+      this._hass = null;
+      this._cards = [];
+      this.attachShadow({ mode: "open" });
+    }
+
+    setConfig(config) {
+      if (!isObject(config) || !Array.isArray(config.cards)) throw new Error("'cards' must be a list of cards");
+      this._config = config;
+      loadHelpers().then(this._build.bind(this), function (e) {
+        console.error("[declutter-plus] grid init failed", e);
+      });
+    }
+
+    set hass(hass) {
+      this._hass = hass;
+      this._cards.forEach(function (card) {
+        card.hass = hass;
+      });
+    }
+
+    _build() {
+      const root = this.shadowRoot;
+      root.innerHTML = "";
+      const style = document.createElement("style");
+      style.textContent = GRID_STYLE;
+      root.appendChild(style);
+      const grid = document.createElement("div");
+      grid.className = "dp-grid";
+      const cells = [];
+      this._cards = [];
+      this._config.cards.forEach((config, index) => {
+        const cell = document.createElement("div");
+        cell.className = "dp-cell";
+        const card = helpers.createCardElement(config);
+        card.addEventListener("ll-rebuild", (ev) => {
+          ev.stopPropagation();
+          const fresh = helpers.createCardElement(config);
+          if (this._hass) fresh.hass = this._hass;
+          cell.replaceChild(fresh, cell.firstChild);
+          this._cards[index] = fresh;
+          cells[index].card = fresh;
+          layoutGrid([cells[index]]);
+        });
+        if (this._hass) card.hass = this._hass;
+        cell.appendChild(card);
+        grid.appendChild(cell);
+        this._cards.push(card);
+        cells.push({ el: cell, config: config, card: card });
+      });
+      root.appendChild(grid);
+      layoutGrid(cells);
+    }
+
+    getCardSize() {
+      return Promise.all(
+        this._cards.map(function (card) {
+          return typeof card.getCardSize === "function" ? card.getCardSize() : 1;
+        })
+      ).then(function (sizes) {
+        return sizes.reduce(function (a, b) {
+          return a + b;
+        }, 0);
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Canal aperçu -> éditeur
 
   const previewBus = { editors: [] };
@@ -1156,7 +1286,9 @@
     ".dp-tools button{border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;" +
     "background:var(--primary-color);color:var(--text-primary-color,#fff);font-size:15px}" +
     ".dp-frame{position:relative;display:block}" +
+    ".dp-one>.dp-cell,.dp-stack>.dp-cell{position:relative;display:block}" +
     ".dp-stack{display:flex;flex-direction:column;gap:var(--vertical-stack-card-gap,var(--stack-card-gap,8px))}" +
+    GRID_STYLE +
     ".dp-error{padding:12px 16px;color:var(--error-color,#db4437);" +
     "background:var(--ha-card-background,var(--card-background-color,#fff));border-radius:var(--ha-card-border-radius,12px);" +
     "border:1px solid var(--error-color,#db4437);font-size:14px}";
@@ -1176,6 +1308,7 @@
       this._signature = null;
       this._editMode = false;
       this._preview = false;
+      this._inEditor = false;
       this._deferred = false;
       this._onLibrary = this._build.bind(this);
       this.attachShadow({ mode: "open" });
@@ -1236,6 +1369,11 @@
     connectedCallback() {
       this._entry().listeners.add(this._onLibrary);
       liveCards.add(this);
+      const inEditor = this._detectEditor();
+      if (inEditor !== this._inEditor) {
+        this._inEditor = inEditor;
+        this._signature = null;
+      }
       this._build();
     }
 
@@ -1249,7 +1387,20 @@
     }
 
     _editable() {
-      return this._preview && this.constructor.kind === "card";
+      return this._preview && this.constructor.kind === "card" && this._inEditor;
+    }
+
+    _detectEditor() {
+      let el = this.parentNode || null;
+      let guard = 0;
+      while (el && guard < 200) {
+        guard++;
+        const tag = el.localName;
+        if (tag === "hui-dialog-edit-card" || tag === "hui-card-preview" || tag === "hui-card-element-editor") return true;
+        if (tag === "hui-root" || tag === "hui-section" || tag === "hui-view") return false;
+        el = el.parentNode || el.host;
+      }
+      return false;
     }
 
     _build() {
@@ -1293,7 +1444,7 @@
         return;
       }
       this._show(renderTemplate(tpl, listToObject(this._config.variables)), lang, tpl.kind === "card" ? "add" : null);
-      if (this._deferred && this.isConnected && tpl.kind === "card" && !this._preview) fireEvent(this, "ll-rebuild", {});
+      if (this._deferred && this.isConnected && tpl.kind === "card" && !this._inEditor) fireEvent(this, "ll-rebuild", {});
       this._deferred = false;
     }
 
@@ -1308,10 +1459,12 @@
         this._rendered = rendered;
         try {
           // aperçu : chaque carte d'un template multi-cartes a sa propre barre d'édition
-          const cards = this._editable() && isStack(rendered.config) ? rendered.config.cards : [rendered.config];
+          const list = this._editable() && isStack(rendered.config);
+          const cards = list ? rendered.config.cards : [rendered.config];
           this._mount(
             cards.map((config) => this._createChild(this.constructor.kind, config)),
-            this._editable() && isStack(rendered.config)
+            list ? rendered.config.type : null,
+            cards
           );
         } catch (e) {
           this._showError(tSub(lang, "error", { message: e.message }));
@@ -1394,19 +1547,20 @@
         "ll-cut-card": null,
         "ll-move-card": null,
         "ll-move-to-section": null,
-        "ll-change-grid-options": null
+        "ll-change-grid-options": "resize"
       };
       Object.keys(map).forEach(function (type) {
         frame.addEventListener(type, function (ev) {
           ev.stopPropagation();
-          if (map[type]) previewAction(map[type], { config: self._config, index: index });
+          const detail = ev.detail || {};
+          if (map[type]) previewAction(map[type], { config: self._config, index: index, gridOptions: detail.gridOptions });
         });
       });
       frame.appendChild(child);
       return frame;
     }
 
-    _mount(children, asList) {
+    _mount(children, listType, configs) {
       const self = this;
       const signature = this._signature;
       this._clear();
@@ -1427,12 +1581,18 @@
         self._frames.push(self._wrap(child, index));
       });
       let frame = this._frames[0];
-      if (asList) {
+      if (this._editable()) {
+        // une cellule positionnée par carte (le calque d'édition de HA s'y cale)
         frame = document.createElement("div");
-        frame.className = "dp-stack";
-        this._frames.forEach(function (f) {
-          frame.appendChild(f);
+        frame.className = listType === "vertical-stack" ? "dp-stack" : listType ? "dp-grid" : "dp-one";
+        const cells = this._frames.map(function (f, i) {
+          const cell = document.createElement("div");
+          cell.className = "dp-cell";
+          cell.appendChild(f);
+          frame.appendChild(cell);
+          return { el: cell, config: configs[i], card: children[i] };
         });
+        if (listType && listType !== "vertical-stack") layoutGrid(cells);
       }
       this._frame = frame;
       this.shadowRoot.insertBefore(frame, this.shadowRoot.querySelector(".dp-add"));
@@ -2158,6 +2318,7 @@
       else if (action === "delete") this._removeCard(index);
       else if (action === "duplicate") this._duplicateCard(index);
       else if (action === "copy") this._copyCard(index);
+      else if (action === "resize") this._resizeCard(index, payload.gridOptions);
     }
 
     _dialogFailed(opened) {
@@ -2236,7 +2397,6 @@
         ownConfig: ownConfig,
         onSave: function (card) {
           const isNew = !ed.originalName;
-          if (!isStack(ed.card) && isObject(card.grid_options)) ed.grid_options = clone(card.grid_options);
           replaceDraftCard(ed, index, card);
           return editor._writeDraft(ed).then(function () {
             const next = Object.assign({}, ownConfig, { template: ed.name });
@@ -2299,6 +2459,14 @@
         }
       }
       this._deleteTemplate();
+    }
+
+    _resizeCard(index, gridOptions) {
+      const current = this._current();
+      if (!current) return;
+      const ed = draftFromTemplate(current.name, current.found, this._config.variables);
+      if (!resizeDraftCard(ed, index, gridOptions)) return;
+      this._run(this._writeDraft(ed), null).catch(function () {});
     }
 
     _duplicateCard(index) {
@@ -2392,6 +2560,7 @@
   define(PASTE_TAG, DeclutterPlusPasteCard);
   define(ELEMENT_TAG, DeclutterPlusElement);
   define(ROW_TAG, DeclutterPlusRow);
+  define(GRID_TAG, DeclutterPlusGrid);
   define(EDITOR_TAG, DeclutterPlusCardEditor);
 
   // Suggestion de template dans le sélecteur de cartes (HA 2026.6+)

@@ -17,8 +17,9 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
   and the card's edit toolbar opens its own editor (visual or code) — any card,
   including custom cards such as Bubble Card.
 - **Several cards per template**: **Add card** stays under the cards; each card
-  has its own edit toolbar (edit, duplicate, copy, delete). Multi-card templates
-  are stored as a native `vertical-stack`.
+  has its own edit toolbar (edit, duplicate, copy, delete). Cards are laid out
+  side by side on a 12-column grid, like a section: set each card's width in the
+  *Layout* tab of its editor.
 - **Template gallery** with live thumbnails, variable form with real pickers
   (entity, icon, area…).
 - **Copy & paste native cards**: *Copy* any card from its menu, then pick
@@ -85,8 +86,10 @@ variables:
   color: amber
 ```
 
-Also available: `custom:declutter-plus-element` (picture-elements) and
-`custom:declutter-plus-row` (entities card rows).
+Also available: `custom:declutter-plus-element` (picture-elements),
+`custom:declutter-plus-row` (entities card rows) and `custom:declutter-plus-grid`
+(12-column grid used by multi-card templates, usable on its own:
+`cards:` list, width from each card's `grid_options.columns`).
 
 ## Template format
 

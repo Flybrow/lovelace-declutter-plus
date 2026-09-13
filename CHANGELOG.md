@@ -2,6 +2,25 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.4.0 — 13 September 2026
+
+### New
+
+- **Cards side by side**: multi-card templates use a 12-column grid, like a
+  section. Each card takes its own width (its default size, or the *Layout* tab
+  of its editor, or the resize handles of the edit toolbar).
+- New `custom:declutter-plus-grid` card, used to store multi-card templates.
+  Existing `vertical-stack` templates are converted when a card is added,
+  duplicated or removed.
+
+### Fixes
+
+- Editing the second card of a template opened the first one: the edit overlay
+  of the first card covered all cards.
+- On the dashboard in edit mode, Declutter Plus cards showed the "Add card"
+  button and per-card edit toolbars; they now only appear in the card editor
+  pop-up.
+
 ## 1.3.0 — 13 September 2026
 
 - **Several cards per template**: **Add card** now stays under the cards in the

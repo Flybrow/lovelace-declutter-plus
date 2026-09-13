@@ -2,6 +2,26 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.4.0 — 13 septembre 2026
+
+### Nouveautés
+
+- **Cartes côte à côte** : les templates à plusieurs cartes utilisent une grille
+  de 12 colonnes, comme une section. Chaque carte prend sa largeur (taille par
+  défaut, onglet *Mise en page* de son éditeur ou poignées de redimensionnement
+  de la barre d'édition).
+- Nouvelle carte `custom:declutter-plus-grid`, qui stocke les templates
+  multi-cartes. Les templates existants en `vertical-stack` sont convertis dès
+  qu'une carte est ajoutée, dupliquée ou supprimée.
+
+### Corrections
+
+- Modifier la deuxième carte d'un template ouvrait la première : le calque
+  d'édition de la première carte recouvrait toutes les cartes.
+- Sur le dashboard en mode édition, les cartes Declutter Plus affichaient le
+  bouton « Ajouter une carte » et les barres d'édition par carte ; ils
+  n'apparaissent plus que dans la popup d'édition de la carte.
+
 ## 1.3.0 — 13 septembre 2026
 
 - **Plusieurs cartes par template** : **Ajouter une carte** reste désormais sous

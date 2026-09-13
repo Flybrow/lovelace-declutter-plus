@@ -19,8 +19,9 @@ moderne et graphique de [decluttering-card](https://github.com/custom-cards/decl
   cartes personnalisées comme Bubble Card.
 - **Plusieurs cartes par template** : **Ajouter une carte** reste sous les
   cartes ; chaque carte a sa barre d'édition (modifier, dupliquer, copier,
-  supprimer). Un template à plusieurs cartes est stocké en `vertical-stack`
-  natif.
+  supprimer). Les cartes se placent côte à côte sur une grille de 12 colonnes,
+  comme dans une section : régler la largeur de chaque carte dans l'onglet
+  *Mise en page* de son éditeur.
 - **Galerie de templates** avec miniatures en direct, formulaire des variables
   avec vrais sélecteurs (entité, icône, pièce…).
 - **Copier-coller de cartes natives** : *Copier* une carte depuis son menu, puis
@@ -93,8 +94,11 @@ variables:
   color: amber
 ```
 
-Aussi disponibles : `custom:declutter-plus-element` (picture-elements) et
-`custom:declutter-plus-row` (lignes de carte entités).
+Aussi disponibles : `custom:declutter-plus-element` (picture-elements),
+`custom:declutter-plus-row` (lignes de carte entités) et
+`custom:declutter-plus-grid` (grille de 12 colonnes des templates multi-cartes,
+utilisable seule : liste `cards:`, largeur donnée par `grid_options.columns` de
+chaque carte).
 
 ## Format des templates
 
