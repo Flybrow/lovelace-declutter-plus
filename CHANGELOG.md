@@ -2,6 +2,15 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.8.1 — 13 September 2026
+
+### Fixes
+
+- After editing a card of the template, the **Save** button of the Declutter Plus
+  editor stayed greyed out (the change was already saved in the template, so
+  Home Assistant saw nothing to save). It is now enabled and saves normally;
+  **Cancel** still closes without a "discard changes" prompt.
+
 ## 1.8.0 — 13 September 2026
 
 ### Protection of shared templates

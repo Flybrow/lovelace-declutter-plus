@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.8.0";
+  const VERSION = "1.8.1";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -33,7 +33,10 @@
   const PREVIEW_LIMIT = 24;
   const PREVIEW_REFRESH_MS = 60000;
   const DOM_GUARD = 20000;
-  const DIRTY_FRAMES = 10;
+  // HA réinitialise son suivi « modifié » après un chargement asynchrone
+  const DIRTY_TICKS = 40;
+  const DIRTY_TICK_MS = 50;
+  const DIRTY_MARKER = "__declutter_plus_saved";
   const CLOSE_TIMEOUT_MS = 1500;
   const FALLBACK_LANG = "en";
 
@@ -613,18 +616,25 @@
   }
 
   // Force l'état « modifié » pour que le bouton Enregistrer de HA reste actif.
-  function forceDialogDirty(dialog, original) {
+  // La référence (« initial ») reçoit un marqueur : l'état diffère de la config
+  // courante (Enregistrer actif), et « Annuler » restaure cette référence, donc
+  // aucune demande « abandonner les modifications ».
+  function forceDialogDirty(dialog) {
     try {
       const slices = dialog._dirtySlices;
       const slice = slices && typeof slices.get === "function" ? slices.get("__default__") : null;
-      if (slice) {
-        slice.initial = clone(original);
-        slice.normalizedInitial =
-          typeof dialog._effectiveNormalize === "function" ? dialog._effectiveNormalize(clone(original)) : clone(original);
-        if (typeof dialog._publishContext === "function") dialog._publishContext();
-      }
-      if ("_dirty" in dialog) dialog._dirty = true;
-    } catch (e) {}
+      if (!slice || !isObject(slice.current)) return false;
+      if (isObject(slice.initial) && slice.initial[DIRTY_MARKER]) return true;
+      const initial = clone(slice.current);
+      initial[DIRTY_MARKER] = true;
+      slice.initial = initial;
+      slice.normalizedInitial = typeof dialog._normalizeEffective === "function" ? dialog._normalizeEffective(clone(initial)) : clone(initial);
+      if (typeof dialog._publishContext === "function") dialog._publishContext();
+      if (typeof dialog.requestUpdate === "function") dialog.requestUpdate();
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   function createProxySection(hass, cards, saveConfig) {
@@ -677,7 +687,6 @@
     if (!dialog._params) return Promise.resolve({ ok: false, reason: "no dialog params" });
 
     const parent = Object.assign({}, dialog._params);
-    const originalRoot = clone(parent.cardConfig);
     const ownPath = findConfigPath(parent.cardConfig, opts.ownConfig) || [];
     let nextOwnConfig = null;
     let pendingChild = null;
@@ -717,12 +726,12 @@
         });
       }
       if (nextOwnConfig) {
-        let frame = 0;
-        const tick = function () {
-          forceDialogDirty(dialog, originalRoot);
-          if (++frame < DIRTY_FRAMES) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
+        // minuteur plutôt que requestAnimationFrame (suspendu en arrière-plan)
+        let ticks = 0;
+        const timer = setInterval(function () {
+          forceDialogDirty(dialog);
+          if (++ticks >= DIRTY_TICKS) clearInterval(timer);
+        }, DIRTY_TICK_MS);
       }
     };
 

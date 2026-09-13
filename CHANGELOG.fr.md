@@ -2,6 +2,16 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.8.1 — 13 septembre 2026
+
+### Corrections
+
+- Après la modification d'une carte du template, le bouton **Enregistrer** de
+  l'éditeur Declutter Plus restait grisé (la modification étant déjà enregistrée
+  dans le template, Home Assistant ne voyait rien à enregistrer). Il est
+  désormais actif et enregistre normalement ; **Annuler** ferme toujours sans
+  demander d'abandonner les modifications.
+
 ## 1.8.0 — 13 septembre 2026
 
 ### Protection des templates partagés
