@@ -2,6 +2,14 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.6.0 — 13 septembre 2026
+
+- **Importer une section** : un nouveau bouton sous **Ajouter une carte** dans
+  l'aperçu liste les sections du dashboard et copie toutes les cartes de celle
+  choisie dans le template (ou crée un template portant le nom de la section), en
+  gardant la largeur des cartes. L'entité de chaque carte devient une variable.
+  La section d'origine n'est pas modifiée.
+
 ## 1.5.6 — 13 septembre 2026
 
 ### Corrections

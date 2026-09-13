@@ -16,6 +16,11 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
   preview on the right: **Add card** opens Home Assistant's card picker pop-up,
   and the card's edit toolbar opens its own editor (visual or code) — any card,
   including custom cards such as Bubble Card.
+- **Import a whole section**: **Import a section** (under **Add card**) copies
+  every card of a section of the dashboard into the template at once, with
+  their widths.
+- **The original cards are never changed**: a template is a copy. Delete the
+  original cards yourself if you only want to keep the Declutter Plus version.
 - **Several cards per template**: **Add card** stays under the cards; each card
   has its own edit toolbar (edit, duplicate, copy, delete). Cards are laid out
   side by side on a 12-column grid, like a section: set each card's width in the

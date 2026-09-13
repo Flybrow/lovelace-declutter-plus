@@ -2,6 +2,13 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.6.0 — 13 September 2026
+
+- **Import a section**: a new button under **Add card** in the preview lists the
+  sections of the dashboard and copies all the cards of the chosen one into the
+  template (or creates a template named after the section), keeping card widths.
+  Each card's entity becomes a variable. The original section is not changed.
+
 ## 1.5.6 — 13 September 2026
 
 ### Fixes

@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.5.6";
+  const VERSION = "1.6.0";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -46,6 +46,13 @@
       kindMismatch: "Template \"{name}\" is a {kind} template.",
       addCard: "Add card",
       saveAsTemplate: "Save as template",
+      importSection: "Import a section",
+      importTitle: "Import the cards of a section",
+      importHelp: "The cards are copied into the template; the original section is not changed.",
+      importEmpty: "No section with cards on this dashboard.",
+      importCount: "{count} card(s)",
+      imported: "{count} card(s) imported.",
+      sectionLabel: "Section {index}",
       panelTemplate: "Template",
       panelVariables: "Variables",
       noTemplateHelp: "Pick a template below, or click \"Add card\" in the preview to create a new one.",
@@ -86,7 +93,8 @@
       adminOnly: "Only administrators can edit templates.",
       dialogUnavailable: "Declutter Plus: the Home Assistant card editor could not be opened ({reason}).",
       dashboardUnavailable: "This dashboard cannot be modified from here (YAML mode?). Use shared storage.",
-      error: "Error: {message}"
+      error: "Error: {message}",
+      close: "Close"
     },
     fr: {
       cardName: "Declutter Plus",
@@ -97,6 +105,13 @@
       kindMismatch: "Le template « {name} » est de type {kind}.",
       addCard: "Ajouter une carte",
       saveAsTemplate: "Enregistrer comme template",
+      importSection: "Importer une section",
+      importTitle: "Importer les cartes d'une section",
+      importHelp: "Les cartes sont copiées dans le template ; la section d'origine n'est pas modifiée.",
+      importEmpty: "Aucune section avec des cartes sur ce dashboard.",
+      importCount: "{count} carte(s)",
+      imported: "{count} carte(s) importée(s).",
+      sectionLabel: "Section {index}",
       panelTemplate: "Template",
       panelVariables: "Variables",
       noTemplateHelp: "Choisissez un template ci-dessous, ou cliquez sur « Ajouter une carte » dans l'aperçu pour en créer un.",
@@ -137,7 +152,8 @@
       adminOnly: "Seuls les administrateurs peuvent modifier les templates.",
       dialogUnavailable: "Declutter Plus : impossible d'ouvrir l'éditeur de cartes de Home Assistant ({reason}).",
       dashboardUnavailable: "Ce dashboard ne peut pas être modifié d'ici (mode YAML ?). Utilisez le stockage partagé.",
-      error: "Erreur : {message}"
+      error: "Erreur : {message}",
+      close: "Fermer"
     }
   };
 
@@ -454,6 +470,27 @@
     try {
       window.localStorage.setItem(CLIPBOARD_KEY, JSON.stringify(card));
     } catch (e) {}
+  }
+
+  // Sections du dashboard qui contiennent des cartes (hors cartes Declutter Plus).
+  function listDashboardSections(config, lang) {
+    const out = [];
+    if (!config || !Array.isArray(config.views)) return out;
+    config.views.forEach(function (view, v) {
+      const viewName = view.title || view.path || "#" + (v + 1);
+      (Array.isArray(view.sections) ? view.sections : []).forEach(function (section, i) {
+        const cards = (Array.isArray(section.cards) ? section.cards : []).filter(function (card) {
+          return isObject(card) && typeof card.type === "string" && card.type.indexOf("custom:declutter-plus") !== 0;
+        });
+        if (!cards.length) return;
+        const heading = cards.find(function (card) {
+          return card.type === "heading" && card.heading;
+        });
+        const title = (heading && heading.heading) || section.title || tSub(lang, "sectionLabel", { index: i + 1 });
+        out.push({ label: viewName + " › " + title, title: title, cards: cards });
+      });
+    });
+    return out;
   }
 
   // ---------------------------------------------------------------------------
@@ -1434,6 +1471,7 @@
     "min-height:56px;padding:12px;border:2px dashed var(--divider-color,#8886);border-radius:var(--ha-card-border-radius,12px);" +
     "background:transparent;color:var(--primary-text-color);font:inherit;font-size:14px;cursor:pointer;opacity:.8}" +
     ".dp-add:hover{opacity:1;border-color:var(--primary-color);color:var(--primary-color)}" +
+    ".dp-add.dp-import{min-height:40px;margin-top:6px;font-size:13px;border-width:1px}" +
     ".dp-add ha-svg-icon{--mdc-icon-size:20px}" +
     ".dp-tools{position:absolute;top:6px;right:6px;display:flex;gap:4px;z-index:2}" +
     ".dp-tools button{border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;" +
@@ -1641,10 +1679,27 @@
 
     // Bouton pointillé sous l'aperçu (éditeur uniquement), comme Bubble Card
     _syncAddButton(lang, mode) {
-      let btn = this.shadowRoot.querySelector(".dp-add");
+      let btn = this.shadowRoot.querySelector(".dp-add:not(.dp-import)");
+      let importBtn = this.shadowRoot.querySelector(".dp-import");
       if (!this._editable() || !mode) {
         if (btn) btn.remove();
+        if (importBtn) importBtn.remove();
         return;
+      }
+      if (mode === "add") {
+        if (!importBtn) {
+          importBtn = document.createElement("button");
+          importBtn.type = "button";
+          importBtn.className = "dp-add dp-import";
+          importBtn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            previewAction("importSection", { config: this._config });
+          });
+          this.shadowRoot.appendChild(importBtn);
+        }
+        importBtn.textContent = t(lang, "importSection");
+      } else if (importBtn) {
+        importBtn.remove();
       }
       if (!btn) {
         btn = document.createElement("button");
@@ -1654,7 +1709,7 @@
           ev.stopPropagation();
           previewAction(btn.dataset.mode, { config: this._config });
         });
-        this.shadowRoot.appendChild(btn);
+        this.shadowRoot.insertBefore(btn, importBtn || null);
       }
       btn.dataset.mode = mode;
       btn.innerHTML = "";
@@ -2488,6 +2543,7 @@
       else if (action === "duplicate") this._duplicateCard(index);
       else if (action === "copy") this._copyCard(index);
       else if (action === "resize") this._resizeCard(index, payload.gridOptions);
+      else if (action === "importSection") this._chooseSection();
     }
 
     _dialogFailed(result) {
@@ -2632,6 +2688,97 @@
         }
       }
       this._deleteTemplate();
+    }
+
+    // Petite popup native (<dialog> modal : passe au-dessus de la boîte de HA)
+    _chooseSection() {
+      const lang = this._lang();
+      const sections = listDashboardSections(this._dashConfig(), lang);
+      const dialog = document.createElement("dialog");
+      dialog.style.cssText =
+        "padding:0;border:none;border-radius:24px;width:min(520px,94vw);max-height:80vh;overflow:auto;" +
+        "background:var(--card-background-color,#fff);color:var(--primary-text-color);font-family:var(--ha-font-family-body,Roboto,sans-serif)";
+      const host = document.createElement("div");
+      const root = host.attachShadow({ mode: "open" });
+      const style = document.createElement("style");
+      style.textContent =
+        ".wrap{padding:20px}h2{margin:0 0 4px;font-size:20px;font-weight:500}p{margin:0 0 16px;font-size:13px;color:var(--secondary-text-color)}" +
+        "button.item{display:flex;justify-content:space-between;gap:12px;width:100%;text-align:left;font:inherit;font-size:14px;padding:12px 14px;" +
+        "margin-bottom:8px;border-radius:12px;border:1px solid var(--divider-color);background:transparent;color:inherit;cursor:pointer}" +
+        "button.item:hover{border-color:var(--primary-color)}button.item span{color:var(--secondary-text-color);white-space:nowrap}" +
+        ".foot{display:flex;justify-content:flex-end}button.close{font:inherit;border:none;background:none;color:var(--primary-color);cursor:pointer;padding:8px}";
+      root.appendChild(style);
+      const wrap = this._el("div", { class: "wrap" }, [
+        this._el("h2", { text: t(lang, "importTitle") }),
+        this._el("p", { text: sections.length ? t(lang, "importHelp") : t(lang, "importEmpty") })
+      ]);
+      const close = () => {
+        try {
+          dialog.close();
+        } catch (e) {}
+        dialog.remove();
+      };
+      sections.forEach((section) => {
+        const item = this._el("button", { class: "item", type: "button" }, [
+          section.label,
+          this._el("span", { text: tSub(lang, "importCount", { count: section.cards.length }) })
+        ]);
+        item.addEventListener("click", () => {
+          close();
+          this._importCards(section);
+        });
+        wrap.appendChild(item);
+      });
+      const closeBtn = this._el("button", { class: "close", type: "button", text: haLabel(this._hass, "ui.common.close", lang, "close") });
+      closeBtn.addEventListener("click", close);
+      wrap.appendChild(this._el("div", { class: "foot" }, [closeBtn]));
+      root.appendChild(wrap);
+      dialog.appendChild(host);
+      dialog.addEventListener("cancel", (ev) => {
+        ev.preventDefault();
+        close();
+      });
+      document.body.appendChild(dialog);
+      try {
+        dialog.showModal();
+      } catch (e) {
+        dialog.setAttribute("open", "");
+      }
+    }
+
+    // Copie les cartes d'une section dans le template affiché, ou en crée un.
+    _importCards(section) {
+      const lang = this._lang();
+      const current = this._current();
+      const cards = section.cards.map(clone);
+      let ed;
+      let names = [];
+      const isNew = !current || normalizeTemplate(current.found.raw).kind !== "card";
+      if (!isNew) {
+        ed = draftFromTemplate(current.name, current.found, this._config.variables);
+      } else {
+        const base = String(section.title).toLowerCase().replace(/[^a-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "") || "section";
+        ed = draftFromCard(cards.shift(), uniqueName(base, this._templates()), this._defaultScope());
+        names = ed.vars.map((v) => v.name);
+        // une section se copie en grille, même avec une seule carte
+        if (cards.length) ensureStack(ed);
+      }
+      cards.forEach(function (card) {
+        const index = draftCards(ed).length;
+        insertDraftCard(ed, index, card);
+        const name = bindCardEntity(ed, index);
+        if (name) names.push(name);
+      });
+      this._run(this._writeDraft(ed), tSub(lang, "imported", { count: section.cards.length }))
+        .then(() => {
+          const next = Object.assign({}, this._config, { template: ed.name });
+          delete next.paste;
+          next.variables = Object.assign(isNew ? {} : listToObject(this._config.variables), draftValuesFor(ed, names));
+          if (!Object.keys(next.variables).length) delete next.variables;
+          this._changed(next);
+          this._render();
+        })
+        .catch(function () {});
     }
 
     _resizeCard(index, gridOptions) {

@@ -17,6 +17,12 @@ moderne et graphique de [decluttering-card](https://github.com/custom-cards/decl
   sélecteur de cartes de Home Assistant, et la barre d'édition de la carte ouvre
   son propre éditeur (visuel ou code) — n'importe quelle carte, y compris les
   cartes personnalisées comme Bubble Card.
+- **Import d'une section entière** : **Importer une section** (sous **Ajouter
+  une carte**) copie d'un coup toutes les cartes d'une section du dashboard dans
+  le template, avec leurs largeurs.
+- **Les cartes d'origine ne sont jamais modifiées** : un template est une copie.
+  Supprimez vous-même les cartes d'origine si vous ne voulez garder que la
+  version Declutter Plus.
 - **Plusieurs cartes par template** : **Ajouter une carte** reste sous les
   cartes ; chaque carte a sa barre d'édition (modifier, dupliquer, copier,
   supprimer). Les cartes se placent côte à côte sur une grille de 12 colonnes,
