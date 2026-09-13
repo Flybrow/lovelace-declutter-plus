@@ -2,6 +2,15 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.5.4 — 13 septembre 2026
+
+### Corrections
+
+- Les cartes des templates créés en 1.3.0 (stockés en `vertical-stack`) restaient
+  empilées même après avoir réglé leur largeur. Modifier ou redimensionner une
+  de leurs cartes convertit désormais le template en grille : les largeurs
+  s'appliquent.
+
 ## 1.5.3 — 13 septembre 2026
 
 ### Corrections
@@ -49,7 +58,8 @@
   de la barre d'édition).
 - Nouvelle carte `custom:declutter-plus-grid`, qui stocke les templates
   multi-cartes. Les templates existants en `vertical-stack` sont convertis dès
-  qu'une carte est ajoutée, dupliquée ou supprimée.
+  qu'une carte est ajoutée, dupliquée, supprimée, modifiée ou redimensionnée
+  (1.5.4).
 
 ### Corrections
 

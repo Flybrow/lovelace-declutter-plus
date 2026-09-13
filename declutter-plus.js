@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.5.3";
+  const VERSION = "1.5.4";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -1204,6 +1204,8 @@
 
   function replaceDraftCard(ed, index, card) {
     if (isStack(ed.card)) {
+      // les anciens vertical-stack passent en grille : la largeur des cartes s'applique
+      ed.card.type = GRID_TYPE;
       ed.card.cards[index] = cleanCard(card);
     } else {
       // carte unique : sa taille est celle du template
@@ -1238,6 +1240,7 @@
   function resizeDraftCard(ed, index, gridOptions) {
     const card = isStack(ed.card) ? ed.card.cards[index] : null;
     if (!isObject(card) || !isObject(gridOptions)) return false;
+    ed.card.type = GRID_TYPE;
     card.grid_options = Object.assign({}, card.grid_options, gridOptions);
     return true;
   }

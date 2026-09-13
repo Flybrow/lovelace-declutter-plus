@@ -2,6 +2,14 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.5.4 — 13 September 2026
+
+### Fixes
+
+- Cards of templates created in 1.3.0 (stored as `vertical-stack`) stayed
+  stacked even after setting their width. Editing or resizing one of their
+  cards now converts the template to the grid, so widths apply.
+
 ## 1.5.3 — 13 September 2026
 
 ### Fixes
@@ -47,7 +55,7 @@
   of its editor, or the resize handles of the edit toolbar).
 - New `custom:declutter-plus-grid` card, used to store multi-card templates.
   Existing `vertical-stack` templates are converted when a card is added,
-  duplicated or removed.
+  duplicated, removed, edited or resized (1.5.4).
 
 ### Fixes
 
