@@ -2,6 +2,14 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.5.2 — 13 septembre 2026
+
+### Corrections
+
+- Régression de la 1.5.1 : dans un dashboard en sections, l'aperçu de l'éditeur
+  perdait les barres d'édition par carte et le bouton « Ajouter une carte »
+  (l'aperçu est rendu dans une section, prise à tort pour le dashboard).
+
 ## 1.5.1 — 13 septembre 2026
 
 ### Corrections

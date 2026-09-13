@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.5.1";
+  const VERSION = "1.5.2";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -1496,8 +1496,9 @@
       while (el && guard < 200) {
         guard++;
         const tag = el.localName;
+        // l'aperçu de la popup peut être dans une hui-section : remonter jusqu'au bout
         if (tag === "hui-dialog-edit-card" || tag === "hui-card-preview" || tag === "hui-card-element-editor") return true;
-        if (tag === "hui-root" || tag === "hui-section" || tag === "hui-view") return false;
+        if (tag === "hui-root") return false;
         el = el.parentNode || el.host;
       }
       return false;

@@ -2,6 +2,14 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.5.2 — 13 September 2026
+
+### Fixes
+
+- Regression in 1.5.1: in a sections dashboard, the card editor preview lost the
+  per-card edit toolbars and the "Add card" button (the preview is rendered
+  inside a section, which was mistaken for the dashboard).
+
 ## 1.5.1 — 13 September 2026
 
 ### Fixes
