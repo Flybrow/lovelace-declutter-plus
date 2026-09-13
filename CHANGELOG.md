@@ -2,6 +2,30 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.2.0 — 13 September 2026
+
+### Editor redesigned, Bubble Card style
+
+- The left panel now only holds the card's settings: template gallery, name,
+  storage, description, variable values and variable settings.
+- All actions moved to the preview on the right:
+  - **Add card** opens Home Assistant's **card picker pop-up**, then the chosen
+    card's editor; saving creates the template.
+  - The card shows Home Assistant's **edit toolbar**: edit opens the card's
+    own editor (visual or code) and saving updates the template; the menu also
+    duplicates, copies or deletes the template.
+- Imported templates (for example Bubble Card templates from decluttering-card)
+  can now be reworked in their own editor.
+- Renaming a template or changing its storage is applied immediately.
+
+### Removed
+
+- The "Create or edit a template" panel and the separate template editor.
+
+### Fixes
+
+- Home Assistant's card clipboard is also read from `sessionStorage`.
+
 ## 1.1.0 — 13 September 2026
 
 ### New

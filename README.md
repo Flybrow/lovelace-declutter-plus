@@ -11,10 +11,11 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
   its variable values.
 - **Two storage options per template**: *this dashboard* or *shared* with every
   dashboard (see [Template storage](#template-storage)).
-- **Visual editor**: options in collapsible panels on the left, Home Assistant's
-  live preview on the right. **Add a card** opens Home Assistant's own card
-  picker, then the card's own visual editor; pick which settings become
-  variables.
+- **Edited like Bubble Card pop-ups**: the left panel only holds the card's
+  settings (template, storage, variables). Everything else happens in the
+  preview on the right: **Add card** opens Home Assistant's card picker pop-up,
+  and the card's edit toolbar opens its own editor (visual or code) — any card,
+  including custom cards such as Bubble Card.
 - **Template gallery** with live thumbnails, variable form with real pickers
   (entity, icon, area…).
 - **Copy & paste native cards**: *Copy* any card from its menu, then pick
@@ -39,13 +40,14 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
 ## Quick start
 
 1. Edit a dashboard › *Add card* › **Declutter Plus**.
-2. Click **Add a card** under the preview and pick a card (or paste a copied
-   card, or copy one from this dashboard). Configure it with its usual editor.
-3. The entity is made variable automatically; use **Make a setting variable…**
-   for others (name, icon, color…).
-4. Choose where to save it (*This dashboard* or *Shared*) and **Save template**.
-5. Reuse it: add another Declutter Plus card, pick the template in the gallery
-   and fill in its variables.
+2. In the preview on the right, click **Add card** and pick a card in Home
+   Assistant's card picker, then configure it in its usual editor and save.
+3. The template is created (its entity becomes a variable) and selected. Back in
+   the Declutter Plus editor, set its name, storage and variables on the left.
+4. To change the card later, use the edit button on the card in the preview:
+   its editor opens (visual or code) and saving updates the template.
+5. Reuse it: add another Declutter Plus card and pick the template in the
+   gallery.
 
 ## Template storage
 
@@ -59,7 +61,7 @@ A template is a reusable card model. Cards themselves go wherever you want.
 - Shared storage is enabled once from the *Template storage* panel
   (administrators). You never need to open that dashboard.
 - If both contain a template with the same name, the local one wins.
-- Changing the storage of an existing template moves it.
+- Changing the storage of an existing template moves it; renaming renames it.
 - Dashboards in YAML mode cannot be modified from the UI: use shared storage.
 
 ## Card options

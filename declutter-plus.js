@@ -1,12 +1,12 @@
 /*
  * Declutter Plus — templates de cartes Lovelace réutilisables, stockés dans le
- * dashboard courant ou partagés entre dashboards, avec éditeur graphique.
- * Compatible avec la syntaxe de decluttering-card.
+ * dashboard courant ou partagés entre dashboards, édités avec les popups natives
+ * de Home Assistant. Compatible avec la syntaxe de decluttering-card.
  */
 (function () {
   "use strict";
 
-  const VERSION = "1.1.0";
+  const VERSION = "1.2.0";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -28,157 +28,97 @@
   const MAX_VAR_PASSES = 10;
   const PREVIEW_LIMIT = 60;
   const DOM_GUARD = 20000;
-  const NATIVE_TIMEOUT_MS = 8000;
+  const DIRTY_FRAMES = 10;
   const FALLBACK_LANG = "en";
 
   const STRINGS = {
     en: {
       cardName: "Declutter Plus",
-      cardDescription: "Reusable card templates for this dashboard or all dashboards, with a visual editor.",
+      cardDescription: "Reusable card templates for this dashboard or all dashboards, edited with Home Assistant's own card editors.",
       pasteName: "Declutter Plus: paste copied card",
       pasteDescription: "Turn the card you copied (card menu > Copy) into a reusable template.",
       templateNotFound: "Template not found: {name}",
       kindMismatch: "Template \"{name}\" is a {kind} template.",
-      chooseTemplate: "Choose a template in the card editor.",
-      pasteHint: "Pasted card: save it as a template to reuse it.",
-      addCard: "Add a card",
+      addCard: "Add card",
+      saveAsTemplate: "Save as template",
       panelTemplate: "Template",
       panelVariables: "Variables",
-      panelCreate: "Create or edit a template",
-      panelStorage: "Template storage",
-      storageIntro: "A template is a reusable card model. Place Declutter Plus cards wherever you want: each card only holds a template name and its variable values.",
-      storageLocal: "This dashboard: saved in this dashboard's configuration, usable on this dashboard only.",
-      storageShared: "Shared: saved in a hidden dashboard named \"{title}\", used only as storage, usable on every dashboard.",
-      sharedMissing: "Shared storage is not set up yet.",
-      sharedMissingUser: "Shared storage is not set up yet. Ask an administrator.",
-      sharedCreate: "Set up shared storage",
-      sharedCount: "{count} shared template(s)",
-      localCount: "{count} template(s) on this dashboard",
-      sharedOpen: "Open storage dashboard",
-      reload: "Reload",
-      sharedNote: "This hidden dashboard only stores the shared **Declutter Plus** templates. You do not need to open it: manage templates from the Declutter Plus card editor.",
-      importLegacy: "Move {count} decluttering-card template(s) to shared storage",
-      importDone: "{count} template(s) moved.",
+      noTemplateHelp: "Pick a template below, or click \"Add card\" in the preview to create a new one.",
+      pasteHelp: "Pasted card: click \"Save as template\" in the preview.",
       search: "Search templates",
-      noTemplates: "No template yet. Click \"Add a card\" under the preview to create one.",
+      noTemplates: "No template yet.",
       scopeLocal: "This dashboard",
       scopeLegacy: "This dashboard (decluttering-card)",
       scopeShared: "Shared",
       noPreview: "No preview for {kind} templates",
-      noVariables: "This template has no variables.",
-      defaultValue: "Default: {value}",
-      editTemplate: "Edit this template",
-      editorTitle: "Template editor",
       fieldName: "Template name",
       fieldDescription: "Description",
-      fieldKind: "Type",
-      fieldScope: "Save to",
-      kindCard: "Card",
-      kindElement: "Picture element",
-      kindRow: "Entities row",
-      pickCard: "Pick the card to turn into a template:",
-      changeCard: "Change card",
-      codeEditor: "Show code editor",
-      visualEditor: "Show visual editor",
-      fromClipboard: "Paste copied card",
-      fromDashboard: "Copy a card of this dashboard…",
-      clipboardEmpty: "No copied card found. Use \"Copy\" in a card menu, then try again.",
-      nativeUnavailable: "The Home Assistant card picker could not be loaded: write the card YAML below.",
-      fieldConfig: "Configuration (YAML)",
-      varsHelp: "Choose which settings change from one card to another. Their current value becomes the default value.",
+      fieldScope: "Storage",
+      storageLocal: "Saved in this dashboard's configuration, usable on this dashboard only.",
+      storageShared: "Saved in a hidden dashboard named \"{title}\", used only as storage, usable on every dashboard.",
+      sharedEnable: "Enable shared storage",
+      sharedNote: "This hidden dashboard only stores the shared **Declutter Plus** templates. You do not need to open it: manage templates from the Declutter Plus card editor.",
+      noVariables: "This template has no variables.",
+      defaultValue: "Default: {value}",
+      templateVars: "Variable settings of the template",
+      templateVarsHelp: "These card settings can be changed on each Declutter Plus card.",
       addVariable: "Make a setting variable…",
-      varName: "Variable",
-      varLabel: "Label",
-      removeVar: "Remove",
-      extraDefaults: "Other default values (YAML)",
-      save: "Save template",
-      remove: "Delete",
-      cancel: "Close",
-      confirmDelete: "Delete template \"{name}\"?",
+      removeVar: "Remove variable {name}",
+      nonCardHelp: "This {kind} template is edited in YAML (code editor of this card).",
+      confirmDelete: "Delete template \"{name}\" from storage? Other cards using it will show an error.",
       confirmOverwrite: "Template \"{name}\" already exists there. Overwrite?",
       saved: "Template saved.",
       deleted: "Template deleted.",
+      copied: "Card copied.",
       invalidName: "The name may only contain letters, digits, _ and -.",
-      invalidYaml: "Invalid YAML.",
-      noCard: "Pick a card first.",
       adminOnly: "Only administrators can edit templates.",
+      dialogUnavailable: "The Home Assistant card editor is not available here. Open this card from the dashboard editor.",
       dashboardUnavailable: "This dashboard cannot be modified from here (YAML mode?). Use shared storage.",
-      error: "Error: {message}",
-      untitledCard: "card"
+      error: "Error: {message}"
     },
     fr: {
       cardName: "Declutter Plus",
-      cardDescription: "Templates de cartes réutilisables, pour ce dashboard ou tous les dashboards, avec éditeur graphique.",
+      cardDescription: "Templates de cartes réutilisables, pour ce dashboard ou tous les dashboards, édités avec les éditeurs de cartes de Home Assistant.",
       pasteName: "Declutter Plus : coller la carte copiée",
       pasteDescription: "Transforme la carte copiée (menu de la carte > Copier) en template réutilisable.",
       templateNotFound: "Template introuvable : {name}",
       kindMismatch: "Le template « {name} » est de type {kind}.",
-      chooseTemplate: "Choisissez un template dans l'éditeur de la carte.",
-      pasteHint: "Carte collée : enregistrez-la comme template pour la réutiliser.",
       addCard: "Ajouter une carte",
+      saveAsTemplate: "Enregistrer comme template",
       panelTemplate: "Template",
       panelVariables: "Variables",
-      panelCreate: "Créer ou modifier un template",
-      panelStorage: "Stockage des templates",
-      storageIntro: "Un template est un modèle de carte réutilisable. Posez les cartes Declutter Plus où vous voulez : chaque carte ne contient que le nom du template et les valeurs de ses variables.",
-      storageLocal: "Ce dashboard : enregistré dans la configuration de ce dashboard, utilisable uniquement sur ce dashboard.",
-      storageShared: "Partagé : enregistré dans un dashboard caché nommé « {title} », qui sert uniquement de stockage, utilisable sur tous les dashboards.",
-      sharedMissing: "Le stockage partagé n'est pas encore activé.",
-      sharedMissingUser: "Le stockage partagé n'est pas encore activé. Demandez à un administrateur.",
-      sharedCreate: "Activer le stockage partagé",
-      sharedCount: "{count} template(s) partagé(s)",
-      localCount: "{count} template(s) sur ce dashboard",
-      sharedOpen: "Ouvrir le dashboard de stockage",
-      reload: "Recharger",
-      sharedNote: "Ce dashboard caché sert uniquement à stocker les templates **Declutter Plus** partagés. Inutile de l'ouvrir : gérez les templates depuis l'éditeur de la carte Declutter Plus.",
-      importLegacy: "Déplacer {count} template(s) decluttering-card vers le stockage partagé",
-      importDone: "{count} template(s) déplacé(s).",
+      noTemplateHelp: "Choisissez un template ci-dessous, ou cliquez sur « Ajouter une carte » dans l'aperçu pour en créer un.",
+      pasteHelp: "Carte collée : cliquez sur « Enregistrer comme template » dans l'aperçu.",
       search: "Rechercher un template",
-      noTemplates: "Aucun template. Cliquez sur « Ajouter une carte » sous l'aperçu pour en créer un.",
+      noTemplates: "Aucun template pour l'instant.",
       scopeLocal: "Ce dashboard",
       scopeLegacy: "Ce dashboard (decluttering-card)",
       scopeShared: "Partagé",
       noPreview: "Pas d'aperçu pour un template {kind}",
-      noVariables: "Ce template n'a pas de variable.",
-      defaultValue: "Défaut : {value}",
-      editTemplate: "Modifier ce template",
-      editorTitle: "Éditeur de template",
       fieldName: "Nom du template",
       fieldDescription: "Description",
-      fieldKind: "Type",
-      fieldScope: "Enregistrer dans",
-      kindCard: "Carte",
-      kindElement: "Élément d'image",
-      kindRow: "Ligne d'entités",
-      pickCard: "Choisissez la carte à transformer en template :",
-      changeCard: "Changer de carte",
-      codeEditor: "Afficher l'éditeur de code",
-      visualEditor: "Afficher l'éditeur visuel",
-      fromClipboard: "Coller la carte copiée",
-      fromDashboard: "Copier une carte de ce dashboard…",
-      clipboardEmpty: "Aucune carte copiée. Utilisez « Copier » dans le menu d'une carte, puis réessayez.",
-      nativeUnavailable: "Le sélecteur de cartes de Home Assistant n'a pas pu être chargé : saisissez le YAML de la carte ci-dessous.",
-      fieldConfig: "Configuration (YAML)",
-      varsHelp: "Choisissez les réglages qui changent d'une carte à l'autre. Leur valeur actuelle devient la valeur par défaut.",
+      fieldScope: "Stockage",
+      storageLocal: "Enregistré dans la configuration de ce dashboard, utilisable uniquement sur ce dashboard.",
+      storageShared: "Enregistré dans un dashboard caché nommé « {title} », qui sert uniquement de stockage, utilisable sur tous les dashboards.",
+      sharedEnable: "Activer le stockage partagé",
+      sharedNote: "Ce dashboard caché sert uniquement à stocker les templates **Declutter Plus** partagés. Inutile de l'ouvrir : gérez les templates depuis l'éditeur de la carte Declutter Plus.",
+      noVariables: "Ce template n'a pas de variable.",
+      defaultValue: "Défaut : {value}",
+      templateVars: "Réglages variables du template",
+      templateVarsHelp: "Ces réglages de la carte peuvent changer sur chaque carte Declutter Plus.",
       addVariable: "Rendre un réglage variable…",
-      varName: "Variable",
-      varLabel: "Libellé",
-      removeVar: "Retirer",
-      extraDefaults: "Autres valeurs par défaut (YAML)",
-      save: "Enregistrer le template",
-      remove: "Supprimer",
-      cancel: "Fermer",
-      confirmDelete: "Supprimer le template « {name} » ?",
+      removeVar: "Retirer la variable {name}",
+      nonCardHelp: "Ce template {kind} se modifie en YAML (éditeur de code de cette carte).",
+      confirmDelete: "Supprimer le template « {name} » du stockage ? Les autres cartes qui l'utilisent afficheront une erreur.",
       confirmOverwrite: "Le template « {name} » existe déjà à cet endroit. L'écraser ?",
       saved: "Template enregistré.",
       deleted: "Template supprimé.",
+      copied: "Carte copiée.",
       invalidName: "Le nom ne peut contenir que lettres, chiffres, _ et -.",
-      invalidYaml: "YAML invalide.",
-      noCard: "Choisissez d'abord une carte.",
       adminOnly: "Seuls les administrateurs peuvent modifier les templates.",
+      dialogUnavailable: "L'éditeur de cartes de Home Assistant n'est pas disponible ici. Ouvrez cette carte depuis l'édition du dashboard.",
       dashboardUnavailable: "Ce dashboard ne peut pas être modifié d'ici (mode YAML ?). Utilisez le stockage partagé.",
-      error: "Erreur : {message}",
-      untitledCard: "carte"
+      error: "Erreur : {message}"
     }
   };
 
@@ -203,6 +143,15 @@
     return t(lang, key).replace(/\{(\w+)\}/g, function (m, k) {
       return subs && k in subs ? String(subs[k]) : m;
     });
+  }
+
+  // Libellé natif de HA quand il existe (même texte que le reste de l'interface)
+  function haLabel(hass, key, lang, fallbackKey) {
+    try {
+      const text = hass && hass.localize && hass.localize(key);
+      if (text) return text;
+    } catch (e) {}
+    return t(lang, fallbackKey);
   }
 
   // ---------------------------------------------------------------------------
@@ -265,6 +214,23 @@
     return a.length === b.length && a.every(function (k, i) {
       return String(k) === String(b[i]);
     });
+  }
+
+  // Chemin d'un objet égal (JSON) à target dans root ; [] si c'est root.
+  function findConfigPath(root, target) {
+    const wanted = JSON.stringify(target);
+    const stack = [{ node: root, path: [] }];
+    let guard = 0;
+    while (stack.length && guard < DOM_GUARD) {
+      guard++;
+      const item = stack.pop();
+      if (item.node === null || typeof item.node !== "object") continue;
+      if (JSON.stringify(item.node) === wanted) return item.path;
+      Object.keys(item.node).forEach(function (key) {
+        stack.push({ node: item.node[key], path: item.path.concat(Array.isArray(item.node) ? Number(key) : key) });
+      });
+    }
+    return null;
   }
 
   // Feuilles scalaires d'une config (hors clés « type »), candidates aux variables.
@@ -398,15 +364,9 @@
     return !!(hass && hass.user && hass.user.is_admin);
   }
 
-  function withTimeout(promise, ms) {
-    return Promise.race([
-      promise,
-      new Promise(function (resolve, reject) {
-        setTimeout(function () {
-          reject(new Error("timeout"));
-        }, ms);
-      })
-    ]);
+  function errorText(lang, err) {
+    const msg = (err && (err.message || err.code)) || String(err);
+    return msg === "dashboard unavailable" ? t(lang, "dashboardUnavailable") : tSub(lang, "error", { message: msg });
   }
 
   // ---------------------------------------------------------------------------
@@ -452,70 +412,36 @@
     return rootHost ? rootHost.lovelace : null;
   }
 
-  // Presse-papiers de cartes de HA (menu « Copier »).
+  // Presse-papiers de cartes de HA (menu « Copier ») : sessionStorage, puis localStorage.
   function readHaClipboard() {
+    const stores = [];
     try {
-      const raw = window.localStorage.getItem(CLIPBOARD_KEY);
-      const parsed = raw ? JSON.parse(raw) : null;
-      if (isObject(parsed) && typeof parsed.type === "string") return parsed;
+      stores.push(window.sessionStorage, window.localStorage);
     } catch (e) {}
+    for (let i = 0; i < stores.length; i++) {
+      try {
+        const raw = stores[i] && stores[i].getItem(CLIPBOARD_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (isObject(parsed) && typeof parsed.type === "string") return parsed;
+      } catch (e) {}
+    }
     return null;
   }
 
-  function readCopiedCard() {
-    const copied = readHaClipboard();
-    if (copied) return Promise.resolve(copied);
-    if (!navigator.clipboard || !navigator.clipboard.readText) return Promise.resolve(null);
-    return navigator.clipboard.readText().then(
-      function (text) {
-        try {
-          const parsed = JSON.parse(text);
-          return isObject(parsed) && parsed.type ? parsed : null;
-        } catch (e) {
-          return null;
-        }
-      },
-      function () {
-        return null;
-      }
-    );
-  }
-
-  // Liste à plat des cartes d'un dashboard (vues, sections, cartes imbriquées).
-  function listDashboardCards(config) {
-    const out = [];
-    function walk(cards, path) {
-      if (!Array.isArray(cards)) return;
-      cards.forEach(function (card, i) {
-        if (!isObject(card) || !card.type) return;
-        const label = path + " / " + (card.title || card.name || card.entity || card.type) + " #" + (i + 1);
-        out.push({ label: label, config: card });
-        walk(card.cards, label);
-        if (isObject(card.card)) walk([card.card], label);
-      });
-    }
-    if (config && Array.isArray(config.views)) {
-      config.views.forEach(function (view, v) {
-        const vpath = view.title || view.path || "#" + (v + 1);
-        walk(view.cards, vpath);
-        if (Array.isArray(view.sections)) {
-          view.sections.forEach(function (section, s) {
-            walk(section.cards, vpath + " / " + (section.title || "section " + (s + 1)));
-          });
-        }
-      });
-    }
-    return out.filter(function (c) {
-      return String(c.config.type).indexOf("custom:declutter-plus") !== 0;
-    });
+  function writeHaClipboard(card) {
+    try {
+      window.sessionStorage.setItem(CLIPBOARD_KEY, JSON.stringify(card));
+    } catch (e) {}
+    try {
+      window.localStorage.setItem(CLIPBOARD_KEY, JSON.stringify(card));
+    } catch (e) {}
   }
 
   // ---------------------------------------------------------------------------
-  // Helpers de cartes et éditeurs natifs de HA (chargés une fois)
+  // Helpers de cartes de HA (chargés une fois)
 
   let helpers = null;
   let helpersPromise = null;
-  let nativePromise = null;
 
   function loadHelpers() {
     if (helpers) return Promise.resolve(helpers);
@@ -537,40 +463,6 @@
     return helpersPromise;
   }
 
-  // hui-card-picker et hui-card-element-editor sont chargés à la demande par HA :
-  // l'éditeur de la carte « pile verticale » les importe.
-  function loadNativeEditors() {
-    const ready = function () {
-      return !!(customElements.get("hui-card-picker") && customElements.get("hui-card-element-editor"));
-    };
-    if (ready()) return Promise.resolve(true);
-    if (!nativePromise) {
-      nativePromise = withTimeout(
-        loadHelpers()
-          .then(function (h) {
-            h.createCardElement({ type: "vertical-stack", cards: [] });
-            return customElements.whenDefined("hui-vertical-stack-card");
-          })
-          .then(function () {
-            const cls = customElements.get("hui-vertical-stack-card");
-            return cls && cls.getConfigElement ? cls.getConfigElement() : null;
-          })
-          .then(function () {
-            return Promise.all([
-              customElements.whenDefined("hui-card-picker"),
-              customElements.whenDefined("hui-card-element-editor")
-            ]);
-          }),
-        NATIVE_TIMEOUT_MS
-      ).then(ready, function (e) {
-        nativePromise = null;
-        console.warn("[declutter-plus] native card editors unavailable", e);
-        return false;
-      });
-    }
-    return nativePromise;
-  }
-
   function createChild(kind, config) {
     if (kind === "element") return helpers.createHuiElement(config);
     if (kind === "row") return helpers.createRowElement(config);
@@ -578,7 +470,216 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Stockage partagé (dashboard caché)
+  // Popups natives de HA (même principe que Bubble Card)
+  //
+  // Une section fantôme (hui-section + lovelace factice) reçoit ll-create-card /
+  // ll-edit-card : HA ouvre son sélecteur puis son éditeur de carte. L'éditeur
+  // enfant s'affiche dans la boîte d'édition courante ; à sa fermeture, la popup
+  // de la carte Declutter Plus est rouverte avec sa config à jour.
+
+  function haHost() {
+    try {
+      return document.querySelector("home-assistant");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function activeEditDialog() {
+    const host = haHost();
+    try {
+      return host && host.shadowRoot ? host.shadowRoot.querySelector("hui-dialog-edit-card") : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Force l'état « modifié » pour que le bouton Enregistrer de HA reste actif.
+  function forceDialogDirty(dialog, original) {
+    try {
+      const slices = dialog._dirtySlices;
+      const slice = slices && typeof slices.get === "function" ? slices.get("__default__") : null;
+      if (slice) {
+        slice.initial = clone(original);
+        slice.normalizedInitial =
+          typeof dialog._effectiveNormalize === "function" ? dialog._effectiveNormalize(clone(original)) : clone(original);
+        if (typeof dialog._publishContext === "function") dialog._publishContext();
+      }
+      if ("_dirty" in dialog) dialog._dirty = true;
+    } catch (e) {}
+  }
+
+  function createProxySection(hass, cards, saveConfig) {
+    const host = haHost();
+    if (!host || !customElements.get("hui-section")) return Promise.resolve(null);
+    const section = { type: "grid", cards: cards };
+    const el = document.createElement("hui-section");
+    el.style.display = "none";
+    el.hass = hass;
+    el.index = 0;
+    el.viewIndex = 0;
+    el.config = section;
+    el.lovelace = {
+      config: { views: [{ path: "declutter-plus", title: "Declutter Plus", sections: [section] }] },
+      editMode: true,
+      saveConfig: saveConfig
+    };
+    host.appendChild(el);
+    return Promise.resolve()
+      .then(function () {
+        return typeof el._initializeConfig === "function" ? el._initializeConfig() : el.updateComplete;
+      })
+      .then(function () {
+        return el.updateComplete;
+      })
+      .then(function () {
+        return el._layoutElement ? el : null;
+      })
+      .catch(function (e) {
+        console.warn("[declutter-plus] proxy section failed", e);
+        el.remove();
+        return null;
+      });
+  }
+
+  // opts : { hass, mode: "add" | "edit", card, ownConfig, onSave(card) -> Promise<nouvelle config> }
+  function openNativeCardDialog(opts) {
+    const dialog = activeEditDialog();
+    const host = haHost();
+    if (!dialog || !dialog._params || !host) return Promise.resolve(false);
+
+    const parent = Object.assign({}, dialog._params);
+    const originalRoot = clone(parent.cardConfig);
+    const ownPath = findConfigPath(parent.cardConfig, opts.ownConfig) || [];
+    let nextOwnConfig = null;
+    let pendingChild = null;
+    let done = false;
+    let restoreClose = null;
+
+    const cleanup = function () {
+      host.removeEventListener("show-dialog", onShow, true);
+      window.removeEventListener("dialog-closed", onCreateClosed, true);
+      if (restoreClose) restoreClose();
+    };
+
+    const reopenParent = function () {
+      if (done) return;
+      done = true;
+      cleanup();
+      const own = nextOwnConfig || opts.ownConfig;
+      const params = Object.assign({}, parent, {
+        cardConfig: ownPath.length ? (function () {
+          const root = clone(parent.cardConfig);
+          setPath(root, ownPath, clone(own));
+          return root;
+        })() : clone(own)
+      });
+      // la config du dashboard a pu changer (template enregistré localement)
+      const ll = findLovelace(null);
+      if (ll && "lovelaceConfig" in params) params.lovelaceConfig = ll.config;
+      try {
+        dialog.showDialog(params);
+      } catch (e) {
+        fireEvent(host, "show-dialog", {
+          dialogTag: "hui-dialog-edit-card",
+          dialogImport: function () {
+            return Promise.resolve();
+          },
+          dialogParams: params
+        });
+      }
+      if (nextOwnConfig) {
+        let frame = 0;
+        const tick = function () {
+          forceDialogDirty(dialog, originalRoot);
+          if (++frame < DIRTY_FRAMES) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+    };
+
+    const bridgeClose = function () {
+      const hadOwn = Object.prototype.hasOwnProperty.call(dialog, "closeDialog");
+      const original = dialog.closeDialog;
+      const intercepted = function () {
+        restore();
+        const result = typeof original === "function" ? original.apply(dialog, arguments) : true;
+        Promise.resolve(result).then(function (closed) {
+          if (closed !== false) setTimeout(reopenParent, 0);
+        });
+        return result;
+      };
+      const restore = function () {
+        if (dialog.closeDialog !== intercepted) return;
+        if (hadOwn) dialog.closeDialog = original;
+        else delete dialog.closeDialog;
+      };
+      dialog.closeDialog = intercepted;
+      restoreClose = restore;
+    };
+
+    const showChild = function (childParams) {
+      bridgeClose();
+      try {
+        dialog.showDialog(childParams);
+      } catch (e) {
+        console.error("[declutter-plus] cannot open card editor", e);
+        reopenParent();
+      }
+    };
+
+    const onShow = function (ev) {
+      if (!ev.detail || ev.detail.dialogTag !== "hui-dialog-edit-card") return;
+      ev.stopImmediatePropagation();
+      ev.stopPropagation();
+      if (opts.mode === "add") {
+        pendingChild = ev.detail.dialogParams;
+      } else {
+        host.removeEventListener("show-dialog", onShow, true);
+        showChild(ev.detail.dialogParams);
+      }
+    };
+
+    const onCreateClosed = function (ev) {
+      if (!ev.detail || ev.detail.dialog !== "hui-dialog-create-card") return;
+      host.removeEventListener("show-dialog", onShow, true);
+      window.removeEventListener("dialog-closed", onCreateClosed, true);
+      setTimeout(function () {
+        if (pendingChild) showChild(pendingChild);
+        else if (nextOwnConfig) reopenParent();
+      }, 0);
+    };
+
+    const saveConfig = function (config) {
+      const cards = getPath(config, ["views", 0, "sections", 0, "cards"]) || getPath(config, ["views", 0, "cards"]) || [];
+      const card = cards[cards.length - 1];
+      if (!isObject(card)) return Promise.resolve();
+      return Promise.resolve(opts.onSave(card)).then(function (own) {
+        if (own) nextOwnConfig = own;
+      });
+    };
+
+    host.addEventListener("show-dialog", onShow, true);
+    if (opts.mode === "add") window.addEventListener("dialog-closed", onCreateClosed, true);
+
+    return createProxySection(opts.hass, opts.mode === "add" ? [] : [clone(opts.card)], saveConfig).then(function (section) {
+      if (!section) {
+        cleanup();
+        return false;
+      }
+      const eventName = opts.mode === "add" ? "ll-create-card" : "ll-edit-card";
+      section._layoutElement.dispatchEvent(
+        new CustomEvent(eventName, { bubbles: true, composed: true, detail: opts.mode === "add" ? undefined : { path: [0, 0, 0] } })
+      );
+      setTimeout(function () {
+        section.remove();
+      }, 0);
+      return true;
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Stockage partagé (dashboard caché) et local
 
   const libraries = {};
   const liveCards = new Set();
@@ -697,27 +798,30 @@
       });
   }
 
-  // Enregistre dans le dashboard courant via l'objet lovelace (met à jour la
-  // config en mémoire). La config transmise à l'éditeur est aussi mise à jour :
-  // la boîte de dialogue d'édition l'enregistre telle quelle à la fermeture.
-  function saveLocal(lovelace, dialogConfig, mutate) {
+  // Enregistre dans le dashboard courant via l'objet lovelace (config en mémoire
+  // à jour). La config tenue par la boîte d'édition est aussi mise à jour : HA
+  // l'enregistre telle quelle et écraserait sinon les templates.
+  function saveLocal(lovelace, extraConfigs, mutate) {
     if (!isLovelace(lovelace)) return Promise.reject(new Error("dashboard unavailable"));
     const next = Object.assign({}, lovelace.config);
     const local = listToObject(next[TEMPLATES_KEY]);
     const legacy = listToObject(next[LEGACY_KEY]);
     mutate(local, legacy);
+    const targets = [next].concat(
+      extraConfigs.filter(function (c) {
+        return isObject(c) && c !== lovelace.config;
+      })
+    );
     [
       [TEMPLATES_KEY, local],
       [LEGACY_KEY, legacy]
     ].forEach(function (pair) {
-      if (Object.keys(pair[1]).length) next[pair[0]] = pair[1];
-      else delete next[pair[0]];
-      if (isObject(dialogConfig) && dialogConfig !== lovelace.config) {
+      targets.forEach(function (target) {
         try {
-          if (Object.keys(pair[1]).length) dialogConfig[pair[0]] = pair[1];
-          else delete dialogConfig[pair[0]];
+          if (Object.keys(pair[1]).length) target[pair[0]] = pair[1];
+          else delete target[pair[0]];
         } catch (e) {}
-      }
+      });
     });
     return Promise.resolve(lovelace.saveConfig(next)).then(function () {
       liveCards.forEach(function (card) {
@@ -750,23 +854,151 @@
     return out;
   }
 
-  // ---------------------------------------------------------------------------
-  // Canal éditeur <-> aperçu
-
-  const previewBus = { draft: null, cards: new Set(), editors: new Set() };
-
-  function setDraft(config) {
-    if (JSON.stringify(config) === JSON.stringify(previewBus.draft)) return;
-    previewBus.draft = config;
-    previewBus.cards.forEach(function (card) {
-      card._build();
-    });
+  function uniqueName(base, taken) {
+    base = String(base || "template").replace(/^custom:/, "").replace(/[^A-Za-z0-9_-]/g, "_") || "template";
+    let name = base;
+    let i = 2;
+    while (hasVar(taken, name)) name = base + "_" + i++;
+    return name;
   }
 
-  function requestAddCard() {
-    previewBus.editors.forEach(function (editor) {
-      editor._addCard();
+  // ---------------------------------------------------------------------------
+  // Brouillon de template : carte concrète + variables liées à des chemins
+
+  function guessField(value, previous, label) {
+    const field = isObject(previous) ? clone(previous) : {};
+    if (!isObject(field.selector)) {
+      if (typeof value === "boolean") field.selector = { boolean: {} };
+      else if (typeof value === "number") field.selector = { number: { mode: "box" } };
+      else if (typeof value === "string" && ENTITY_RE.test(value)) field.selector = { entity: { domain: value.split(".")[0] } };
+      else if (typeof value === "string" && /^mdi:/.test(value)) field.selector = { icon: {} };
+      else field.selector = { text: {} };
+    }
+    if (label) field.label = label;
+    return field;
+  }
+
+  function suggestVarName(path, taken) {
+    let base = String(path[path.length - 1]).replace(/[^A-Za-z0-9_-]/g, "_");
+    if (/^\d+$/.test(base)) base = String(path[path.length - 2] || "value") + "_" + base;
+    let name = base;
+    let i = 2;
+    while (taken.indexOf(name) !== -1) name = base + "_" + i++;
+    return name;
+  }
+
+  // Template -> brouillon : chaque « [[x]] » exact reprend sa valeur par défaut
+  // (ou celle de la carte) pour que l'éditeur natif reçoive de vraies valeurs.
+  function draftFromTemplate(name, found, given) {
+    const tpl = normalizeTemplate(found.raw);
+    const values = listToObject(given);
+    const card = clone(tpl.config);
+    const vars = [];
+    const extra = clone(tpl.defaults);
+    leafPaths(card).forEach(function (leaf) {
+      if (typeof leaf.value !== "string") return;
+      const m = leaf.value.match(EXACT_VAR_RE);
+      if (!m) return;
+      const hasDefault = hasVar(tpl.defaults, m[1]);
+      const value = hasDefault ? tpl.defaults[m[1]] : values[m[1]];
+      if (value === undefined || value === null || typeof value === "object") return;
+      if (typeof value === "string" && value.indexOf("[[") !== -1) return;
+      setPath(card, leaf.path, value);
+      delete extra[m[1]];
+      const field = tpl.fields[m[1]];
+      vars.push({ name: m[1], path: leaf.path, label: (isObject(field) && field.label) || "", noDefault: !hasDefault });
     });
+    return {
+      originalName: name,
+      originScope: found.scope,
+      name: name,
+      description: tpl.description,
+      kind: tpl.kind,
+      scope: found.scope === SCOPE_SHARED ? SCOPE_SHARED : SCOPE_LOCAL,
+      card: card,
+      vars: vars,
+      extraDefaults: extra,
+      fields: clone(tpl.fields),
+      grid_options: clone(tpl.grid_options)
+    };
+  }
+
+  function draftFromCard(card, name, scope) {
+    const config = clone(card);
+    let gridOptions = null;
+    if (isObject(config.grid_options)) {
+      gridOptions = config.grid_options;
+      delete config.grid_options;
+    }
+    delete config.view_layout;
+    delete config.layout_options;
+    delete config.visibility;
+    const vars = [];
+    if (typeof config.entity === "string" && config.entity) vars.push({ name: "entity", path: ["entity"], label: "" });
+    return {
+      originalName: null,
+      originScope: null,
+      name: name,
+      description: "",
+      kind: "card",
+      scope: scope,
+      card: config,
+      vars: vars,
+      extraDefaults: {},
+      fields: {},
+      grid_options: gridOptions
+    };
+  }
+
+  // Brouillon -> format stocké (compatible decluttering-card).
+  function draftToRaw(ed) {
+    const config = clone(ed.card);
+    const defaults = Object.assign({}, ed.extraDefaults);
+    const fields = {};
+    const oldFields = isObject(ed.fields) ? ed.fields : {};
+    const liveVars = ed.vars.filter(function (v) {
+      return getPath(ed.card, v.path) !== undefined;
+    });
+    liveVars.forEach(function (v) {
+      setPath(config, v.path, "[[" + v.name + "]]");
+    });
+    const used = collectVars(config);
+    Object.keys(oldFields).forEach(function (k) {
+      if (used.has(k) || hasVar(defaults, k)) fields[k] = oldFields[k];
+    });
+    liveVars.forEach(function (v) {
+      const value = getPath(ed.card, v.path);
+      if (!hasVar(defaults, v.name) && !v.noDefault) defaults[v.name] = value;
+      fields[v.name] = guessField(value, oldFields[v.name], v.label);
+    });
+    const raw = {};
+    if (ed.description) raw.description = ed.description;
+    if (Object.keys(defaults).length) raw.default = defaults;
+    if (Object.keys(fields).length) raw.fields = fields;
+    if (isObject(ed.grid_options)) raw.grid_options = ed.grid_options;
+    raw[ed.kind] = config;
+    return raw;
+  }
+
+  // Valeurs actuelles des variables liées (pour la carte qui vient de créer le template)
+  function draftValues(ed) {
+    const values = {};
+    ed.vars.forEach(function (v) {
+      const value = getPath(ed.card, v.path);
+      if (value !== undefined) values[v.name] = value;
+    });
+    return values;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Canal aperçu -> éditeur
+
+  const previewBus = { editors: [] };
+
+  function previewAction(action, payload) {
+    const editors = previewBus.editors;
+    const editor = editors.length ? editors[editors.length - 1] : null;
+    if (editor) editor._previewAction(action, payload);
   }
 
   // ---------------------------------------------------------------------------
@@ -774,13 +1006,20 @@
 
   const BASE_STYLE =
     ":host{display:block}" +
-    ".dp-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;margin-top:8px;padding:14px;" +
-    "border:2px dashed var(--divider-color,#8886);border-radius:var(--ha-card-border-radius,12px);background:transparent;" +
-    "color:var(--secondary-text-color);font:inherit;font-size:14px;cursor:pointer}" +
-    ".dp-add:hover{color:var(--primary-color);border-color:var(--primary-color)}" +
+    ".dp-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;margin-top:8px;" +
+    "min-height:56px;padding:12px;border:2px dashed var(--divider-color,#8886);border-radius:var(--ha-card-border-radius,12px);" +
+    "background:transparent;color:var(--primary-text-color);font:inherit;font-size:14px;cursor:pointer;opacity:.8}" +
+    ".dp-add:hover{opacity:1;border-color:var(--primary-color);color:var(--primary-color)}" +
+    ".dp-add ha-svg-icon{--mdc-icon-size:20px}" +
+    ".dp-tools{position:absolute;top:6px;right:6px;display:flex;gap:4px;z-index:2}" +
+    ".dp-tools button{border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;" +
+    "background:var(--primary-color);color:var(--text-primary-color,#fff);font-size:15px}" +
+    ".dp-frame{position:relative;display:block}" +
     ".dp-error{padding:12px 16px;color:var(--error-color,#db4437);" +
     "background:var(--ha-card-background,var(--card-background-color,#fff));border-radius:var(--ha-card-border-radius,12px);" +
     "border:1px solid var(--error-color,#db4437);font-size:14px}";
+
+  const MDI_PLUS = "M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z";
 
   class DeclutterPlusBase extends HTMLElement {
     constructor() {
@@ -788,6 +1027,7 @@
       this._config = null;
       this._hass = null;
       this._child = null;
+      this._frame = null;
       this._rendered = null;
       this._signature = null;
       this._editMode = false;
@@ -815,6 +1055,7 @@
       const first = !this._hass;
       this._hass = hass;
       if (this._child) this._child.hass = hass;
+      if (this._frame && this._frame.localName === "hui-card-edit-mode") this._frame.hass = hass;
       if (first) this._build();
     }
 
@@ -832,10 +1073,10 @@
     }
 
     set preview(v) {
-      this._preview = v;
+      if (this._preview === !!v) return;
+      this._preview = !!v;
       if (this._child) this._child.preview = v;
-      if (this.constructor.kind === "card" && v) previewBus.cards.add(this);
-      else previewBus.cards.delete(this);
+      this._signature = null;
       this._build();
     }
 
@@ -846,18 +1087,20 @@
     connectedCallback() {
       this._entry().listeners.add(this._onLibrary);
       liveCards.add(this);
-      if (this._preview && this.constructor.kind === "card") previewBus.cards.add(this);
       this._build();
     }
 
     disconnectedCallback() {
       this._entry().listeners.delete(this._onLibrary);
       liveCards.delete(this);
-      previewBus.cards.delete(this);
     }
 
     _entry() {
       return libraryEntry((this._config && this._config.library) || SHARED_DASHBOARD);
+    }
+
+    _editable() {
+      return this._preview && this.constructor.kind === "card";
     }
 
     _build() {
@@ -878,17 +1121,14 @@
       }
       const lang = resolveLang(this._hass);
       const name = this._config.template;
-      this._syncAddButton(lang);
-      if (this._preview && previewBus.draft && this.constructor.kind === "card") {
-        this._showDirect(previewBus.draft);
-        return;
-      }
+
       if (!name && this._config.paste && this.constructor.kind === "card") {
-        this._showDirect(this._config.paste);
+        this._show({ config: this._config.paste, grid_options: null }, lang, "paste");
         return;
       }
       if (!name) {
-        this._showError(t(lang, "chooseTemplate"));
+        this._clear();
+        this._syncAddButton(lang, "add");
         return;
       }
       const lovelace = findLovelace(this);
@@ -896,25 +1136,15 @@
       const tpl = found && normalizeTemplate(found.raw);
       if (!tpl) {
         this._showError(tSub(lang, "templateNotFound", { name: name }));
+        this._syncAddButton(lang, "add");
         return;
       }
       if (tpl.kind !== this.constructor.kind) {
         this._showError(tSub(lang, "kindMismatch", { name: name, kind: tpl.kind }));
         return;
       }
-      const rendered = renderTemplate(tpl, listToObject(this._config.variables));
-      const signature = JSON.stringify(rendered);
-      if (signature === this._signature && this._child) return;
-      this._signature = signature;
-      this._rendered = rendered;
-
-      try {
-        this._mount(this._createChild(tpl.kind, rendered.config));
-      } catch (e) {
-        this._showError(tSub(lang, "error", { message: e.message }));
-        return;
-      }
-      if (this._deferred && this.isConnected && tpl.kind === "card") fireEvent(this, "ll-rebuild", {});
+      this._show(renderTemplate(tpl, listToObject(this._config.variables)), lang, null);
+      if (this._deferred && this.isConnected && tpl.kind === "card" && !this._preview) fireEvent(this, "ll-rebuild", {});
       this._deferred = false;
     }
 
@@ -922,23 +1152,24 @@
       return createChild(kind, config);
     }
 
-    _showDirect(config) {
-      const rendered = { config: config, grid_options: null };
+    _show(rendered, lang, button) {
       const signature = JSON.stringify(rendered);
-      if (signature === this._signature && this._child) return;
-      this._signature = signature;
-      this._rendered = rendered;
-      try {
-        this._mount(createChild("card", config));
-      } catch (e) {
-        this._showError(e.message);
+      if (signature !== this._signature || !this._child) {
+        this._signature = signature;
+        this._rendered = rendered;
+        try {
+          this._mount(this._createChild(this.constructor.kind, rendered.config));
+        } catch (e) {
+          this._showError(tSub(lang, "error", { message: e.message }));
+        }
       }
+      this._syncAddButton(lang, button);
     }
 
-    // Bouton « Ajouter une carte » sous l'aperçu, uniquement dans l'éditeur
-    _syncAddButton(lang) {
+    // Bouton pointillé sous l'aperçu (éditeur uniquement), comme Bubble Card
+    _syncAddButton(lang, mode) {
       let btn = this.shadowRoot.querySelector(".dp-add");
-      if (!(this._preview && this.constructor.kind === "card")) {
+      if (!this._editable() || !mode) {
         if (btn) btn.remove();
         return;
       }
@@ -946,13 +1177,79 @@
         btn = document.createElement("button");
         btn.type = "button";
         btn.className = "dp-add";
-        btn.addEventListener("click", function (ev) {
+        btn.addEventListener("click", (ev) => {
           ev.stopPropagation();
-          requestAddCard();
+          previewAction(btn.dataset.mode, { config: this._config });
         });
         this.shadowRoot.appendChild(btn);
       }
-      btn.textContent = "+  " + t(lang, "addCard");
+      btn.dataset.mode = mode;
+      btn.innerHTML = "";
+      if (mode === "add" && customElements.get("ha-svg-icon")) {
+        const icon = document.createElement("ha-svg-icon");
+        icon.path = MDI_PLUS;
+        btn.appendChild(icon);
+      }
+      const text = document.createElement("span");
+      text.textContent =
+        mode === "add" ? haLabel(this._hass, "ui.panel.lovelace.editor.section.add_card", lang, "addCard") : t(lang, "saveAsTemplate");
+      btn.appendChild(text);
+    }
+
+    // Dans l'aperçu, la carte est entourée de la barre d'édition native de HA.
+    _wrap(child) {
+      if (!this._editable()) return child;
+      const self = this;
+      let frame;
+      if (customElements.get("hui-card-edit-mode")) {
+        frame = document.createElement("hui-card-edit-mode");
+        frame.hass = this._hass;
+        frame.lovelace = {
+          editMode: true,
+          saveConfig: function () {
+            return Promise.resolve();
+          }
+        };
+        frame.path = [0, 0, 0];
+        frame.hiddenOverlay = false;
+      } else {
+        frame = document.createElement("div");
+        frame.className = "dp-frame";
+        const tools = document.createElement("div");
+        tools.className = "dp-tools";
+        [
+          ["edit", "✎"],
+          ["delete", "✕"]
+        ].forEach(function (item) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.textContent = item[1];
+          b.addEventListener("click", function (ev) {
+            ev.stopPropagation();
+            previewAction(item[0], { config: self._config });
+          });
+          tools.appendChild(b);
+        });
+        frame.appendChild(tools);
+      }
+      const map = {
+        "ll-edit-card": "edit",
+        "ll-delete-card": "delete",
+        "ll-duplicate-card": "duplicate",
+        "ll-copy-card": "copy",
+        "ll-cut-card": null,
+        "ll-move-card": null,
+        "ll-move-to-section": null,
+        "ll-change-grid-options": null
+      };
+      Object.keys(map).forEach(function (type) {
+        frame.addEventListener(type, function (ev) {
+          ev.stopPropagation();
+          if (map[type]) previewAction(map[type], { config: self._config });
+        });
+      });
+      frame.appendChild(child);
+      return frame;
     }
 
     _mount(child) {
@@ -967,24 +1264,27 @@
       if (this._hass) child.hass = this._hass;
       child.editMode = this._editMode;
       child.preview = this._preview;
-      if (this._child && this._child.parentNode) this._child.parentNode.removeChild(this._child);
+      this._clear();
+      this._child = child;
+      this._frame = this._wrap(child);
+      this.shadowRoot.insertBefore(this._frame, this.shadowRoot.querySelector(".dp-add"));
+    }
+
+    _clear() {
+      if (this._frame && this._frame.parentNode) this._frame.parentNode.removeChild(this._frame);
       const err = this.shadowRoot.querySelector(".dp-error");
       if (err) err.remove();
-      this._child = child;
-      this.shadowRoot.insertBefore(child, this.shadowRoot.querySelector(".dp-add"));
+      this._frame = null;
+      this._child = null;
+      this._signature = null;
     }
 
     _showError(message) {
-      if (this._child && this._child.parentNode) this._child.parentNode.removeChild(this._child);
-      this._child = null;
-      this._signature = null;
-      let err = this.shadowRoot.querySelector(".dp-error");
-      if (!err) {
-        err = document.createElement("div");
-        err.className = "dp-error";
-        this.shadowRoot.insertBefore(err, this.shadowRoot.querySelector(".dp-add"));
-      }
+      this._clear();
+      const err = document.createElement("div");
+      err.className = "dp-error";
       err.textContent = message;
+      this.shadowRoot.insertBefore(err, this.shadowRoot.querySelector(".dp-add"));
     }
 
     getCardSize() {
@@ -1061,103 +1361,7 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Brouillon de template : carte concrète + variables liées à des chemins
-
-  function guessField(value, previous, label) {
-    const field = isObject(previous) ? clone(previous) : {};
-    if (!isObject(field.selector)) {
-      if (typeof value === "boolean") field.selector = { boolean: {} };
-      else if (typeof value === "number") field.selector = { number: { mode: "box" } };
-      else if (typeof value === "string" && ENTITY_RE.test(value)) field.selector = { entity: { domain: value.split(".")[0] } };
-      else if (typeof value === "string" && /^mdi:/.test(value)) field.selector = { icon: {} };
-      else field.selector = { text: {} };
-    }
-    if (label) field.label = label;
-    else delete field.label;
-    return field;
-  }
-
-  function suggestVarName(path, taken) {
-    let base = String(path[path.length - 1]).replace(/[^A-Za-z0-9_-]/g, "_");
-    if (/^\d+$/.test(base)) base = String(path[path.length - 2] || "value") + "_" + base;
-    let name = base;
-    let i = 2;
-    while (taken.indexOf(name) !== -1) name = base + "_" + i++;
-    return name;
-  }
-
-  // Template existant -> brouillon : les variables exactes deviennent des chemins
-  // et reprennent leur valeur par défaut dans la carte concrète.
-  function draftFromTemplate(name, found) {
-    const tpl = normalizeTemplate(found.raw);
-    const card = clone(tpl.config);
-    const vars = [];
-    const extra = clone(tpl.defaults);
-    leafPaths(card).forEach(function (leaf) {
-      if (typeof leaf.value !== "string") return;
-      const m = leaf.value.match(EXACT_VAR_RE);
-      if (!m) return;
-      const def = tpl.defaults[m[1]];
-      const bindable = hasVar(tpl.defaults, m[1]) && !(typeof def === "string" && VAR_RE.test(def)) && typeof def !== "object";
-      VAR_RE.lastIndex = 0;
-      if (!bindable) return;
-      setPath(card, leaf.path, def);
-      delete extra[m[1]];
-      const field = tpl.fields[m[1]];
-      vars.push({ name: m[1], path: leaf.path, label: (isObject(field) && field.label) || "" });
-    });
-    return {
-      originalName: name,
-      originScope: found.scope,
-      name: name,
-      description: tpl.description,
-      kind: tpl.kind,
-      scope: found.scope === SCOPE_SHARED ? SCOPE_SHARED : SCOPE_LOCAL,
-      card: card,
-      vars: vars,
-      extraDefaults: extra,
-      fields: clone(tpl.fields),
-      grid_options: clone(tpl.grid_options),
-      yamlInvalid: false
-    };
-  }
-
-  function bindDefaultVars(ed) {
-    if (!isObject(ed.card)) return;
-    if (typeof ed.card.entity === "string" && !ed.vars.some(function (v) {
-      return samePath(v.path, ["entity"]);
-    })) {
-      ed.vars.push({ name: "entity", path: ["entity"], label: "" });
-    }
-  }
-
-  // Brouillon -> format stocké (compatible decluttering-card).
-  function draftToRaw(ed) {
-    const config = clone(ed.card);
-    const defaults = Object.assign({}, ed.extraDefaults);
-    const fields = {};
-    const oldFields = isObject(ed.fields) ? ed.fields : {};
-    Object.keys(oldFields).forEach(function (k) {
-      if (hasVar(ed.extraDefaults, k) || collectVars(config).has(k)) fields[k] = oldFields[k];
-    });
-    ed.vars.forEach(function (v) {
-      const value = getPath(ed.card, v.path);
-      if (value === undefined) return;
-      setPath(config, v.path, "[[" + v.name + "]]");
-      if (!hasVar(defaults, v.name)) defaults[v.name] = value;
-      fields[v.name] = guessField(value, oldFields[v.name], v.label);
-    });
-    const raw = {};
-    if (ed.description) raw.description = ed.description;
-    if (Object.keys(defaults).length) raw.default = defaults;
-    if (Object.keys(fields).length) raw.fields = fields;
-    if (isObject(ed.grid_options)) raw.grid_options = ed.grid_options;
-    raw[ed.kind] = config;
-    return raw;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Éditeur graphique
+  // Éditeur (panneau de gauche : réglages de la carte uniquement)
 
   const EDITOR_STYLE = `
     :host { display:block; }
@@ -1165,43 +1369,36 @@
     details.panel { border:1px solid var(--divider-color); border-radius:12px; padding:8px 12px; }
     details.panel summary { cursor:pointer; font-weight:500; padding:4px 0; }
     .body { padding:8px 12px 12px; }
-    .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0; }
-    .grow { flex:1; min-width:160px; color:var(--secondary-text-color); font-size:13px; }
     .notice { padding:10px 12px; border-radius:8px; background:var(--secondary-background-color); font-size:13px; margin-bottom:12px; }
     .notice.err { color:var(--error-color); }
     .notice.ok { color:var(--success-color, #43a047); }
     .help { font-size:13px; color:var(--secondary-text-color); margin:4px 0 8px; line-height:1.45; }
-    ul.help { padding-left:18px; }
-    button.dp { font:inherit; font-size:13px; padding:6px 12px; border-radius:18px; cursor:pointer;
+    input.text, select.text { box-sizing:border-box; width:100%; font:inherit; padding:9px 10px; border-radius:8px;
       border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
-    button.dp.primary { background:var(--primary-color); color:var(--text-primary-color,#fff); border-color:var(--primary-color); }
-    button.dp.danger { color:var(--error-color); border-color:var(--error-color); }
-    button.dp.link { border:none; background:none; color:var(--primary-color); padding:6px 4px; }
-    input.text, select.text { box-sizing:border-box; width:100%; font:inherit; padding:8px 10px; border-radius:8px;
-      border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
-    label.lbl { display:block; font-size:12px; color:var(--secondary-text-color); margin:10px 0 4px; }
+    label.lbl { display:block; font-size:12px; color:var(--secondary-text-color); margin:12px 0 4px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+    @media (max-width:600px) { .grid2 { grid-template-columns:1fr; } }
+    .link { border:none; background:none; color:var(--primary-color); font:inherit; font-size:13px; cursor:pointer; padding:4px 0; }
     .gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:8px;
-      max-height:480px; overflow:auto; padding:2px; }
+      max-height:420px; overflow:auto; padding:2px; }
     .tile { border:2px solid var(--divider-color); border-radius:12px; overflow:hidden; cursor:pointer;
       background:var(--primary-background-color); display:flex; flex-direction:column; }
     .tile.sel { border-color:var(--primary-color); box-shadow:0 0 0 2px var(--primary-color); }
-    .thumb { height:130px; overflow:hidden; pointer-events:none; }
+    .thumb { height:120px; overflow:hidden; pointer-events:none; }
     .thumb .scale { zoom:.55; width:182%; padding:6px; box-sizing:border-box; }
     .thumb .none { display:flex; align-items:center; justify-content:center; height:100%; font-size:12px;
       color:var(--secondary-text-color); padding:8px; text-align:center; }
     .meta { padding:6px 8px; border-top:1px solid var(--divider-color); background:var(--card-background-color); }
     .name { font-weight:500; font-size:13px; word-break:break-all; }
-    .desc { font-size:11px; color:var(--secondary-text-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .badge { display:inline-block; font-size:10px; padding:1px 6px; border-radius:8px; margin-top:2px;
       background:var(--secondary-background-color); color:var(--secondary-text-color); }
     .badge.shared { background:var(--primary-color); color:var(--text-primary-color,#fff); }
-    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
-    @media (max-width:600px) { .grid2 { grid-template-columns:1fr; } }
-    h4 { font-size:14px; font-weight:500; margin:16px 0 4px; }
-    .native { display:block; margin-top:8px; }
-    .var-row { display:grid; grid-template-columns:1fr 1fr auto; gap:6px; align-items:end; margin-bottom:6px; }
-    .var-row .path { grid-column:1 / -1; font-size:11px; color:var(--secondary-text-color); font-family:monospace; margin-top:6px; }
-    textarea.code { box-sizing:border-box; width:100%; min-height:140px; font-family:monospace; font-size:12px; }
+    h4 { font-size:14px; font-weight:500; margin:20px 0 2px; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+    .chip { display:inline-flex; align-items:center; gap:4px; font-size:12px; padding:3px 4px 3px 10px; border-radius:14px;
+      background:var(--secondary-background-color); }
+    .chip code { font-size:11px; color:var(--secondary-text-color); }
+    .chip button { border:none; background:none; color:var(--secondary-text-color); cursor:pointer; font-size:14px; padding:0 4px; }
   `;
 
   class DeclutterPlusCardEditor extends HTMLElement {
@@ -1211,26 +1408,20 @@
       this._hass = null;
       this.lovelace = null; // LovelaceConfig transmise par HA
       this._search = "";
-      this._editing = null;
       this._message = null;
       this._previews = [];
       this._built = false;
       this._lastLang = null;
-      this._nativeOk = null;
+      this._busy = false;
       this._onLibrary = this._render.bind(this);
       this.attachShadow({ mode: "open" });
     }
 
     setConfig(config) {
+      const templateChanged = !this._built || this._config.template !== config.template || !!this._config.paste !== !!config.paste;
       this._config = Object.assign({}, config);
-      if (isObject(this._config.paste) && !this._editing) {
-        this._startFromCard(this._config.paste);
-        this._message = { text: t(this._lang(), "pasteHint"), type: "ok" };
-        this._render();
-        return;
-      }
-      if (this._built) this._renderSelection();
-      else this._render();
+      if (templateChanged) this._render();
+      else this._updateVariablesForm();
     }
 
     set hass(hass) {
@@ -1246,20 +1437,19 @@
       this._previews.forEach(function (p) {
         p.hass = hass;
       });
-      this.shadowRoot.querySelectorAll("ha-form, hui-card-picker, hui-card-element-editor, ha-yaml-editor").forEach(function (el) {
-        el.hass = hass;
-      });
+      const form = this.shadowRoot.querySelector("ha-form");
+      if (form) form.hass = hass;
     }
 
     connectedCallback() {
       this._entry().listeners.add(this._onLibrary);
-      previewBus.editors.add(this);
+      previewBus.editors.push(this);
     }
 
     disconnectedCallback() {
       this._entry().listeners.delete(this._onLibrary);
-      previewBus.editors.delete(this);
-      setDraft(null);
+      const i = previewBus.editors.indexOf(this);
+      if (i !== -1) previewBus.editors.splice(i, 1);
     }
 
     _path() {
@@ -1289,6 +1479,12 @@
       return allTemplates(this._entry(), this._dashConfig());
     }
 
+    _current() {
+      const name = this._config.template;
+      const found = name ? this._templates()[name] : null;
+      return found && normalizeTemplate(found.raw) ? { name: name, found: found } : null;
+    }
+
     _changed(config) {
       this._config = config;
       fireEvent(this, "config-changed", { config: config });
@@ -1300,7 +1496,6 @@
         Object.keys(attrs).forEach(function (k) {
           if (k === "text") el.textContent = attrs[k];
           else if (k === "class") el.className = attrs[k];
-          else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), attrs[k]);
           else el.setAttribute(k, attrs[k]);
         });
       }
@@ -1308,10 +1503,6 @@
         if (c) el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
       });
       return el;
-    }
-
-    _button(label, onClick, cls) {
-      return this._el("button", { class: "dp " + (cls || ""), type: "button", text: label, onclick: onClick });
     }
 
     _panel(cls, title, icon, expanded, content) {
@@ -1342,7 +1533,11 @@
       return t(lang, scope === SCOPE_SHARED ? "scopeShared" : scope === SCOPE_LEGACY ? "scopeLegacy" : "scopeLocal");
     }
 
-    // Rendu complet
+    _notify(text, type) {
+      this._message = text ? { text: text, type: type } : null;
+      this._render();
+    }
+
     _render() {
       if (!this._hass) return;
       const lang = this._lang();
@@ -1355,93 +1550,84 @@
       if (this._message) {
         root.appendChild(this._el("div", { class: "notice " + (this._message.type || ""), text: this._message.text }));
       }
-      const hasTemplate = !!this._config.template;
-      const editing = !!this._editing;
-      root.appendChild(this._panel("panel-template", t(lang, "panelTemplate"), "mdi:view-grid-outline", !hasTemplate && !editing, this._renderGallery(lang)));
-      root.appendChild(this._panel("panel-variables", t(lang, "panelVariables"), "mdi:variable", hasTemplate && !editing, this._el("div", { class: "variables" })));
-      root.appendChild(this._panel("panel-create", t(lang, "panelCreate"), "mdi:pencil-plus-outline", editing, this._el("div", { class: "template-editor" })));
-      root.appendChild(this._panel("panel-storage", t(lang, "panelStorage"), "mdi:database-outline", false, this._renderStorage(lang)));
-      this._renderSelection();
+      const current = this._current();
+      root.appendChild(this._panel("panel-template", t(lang, "panelTemplate"), "mdi:view-grid-outline", !current, this._renderTemplatePanel(lang, current)));
+      if (current) {
+        root.appendChild(this._panel("panel-variables", t(lang, "panelVariables"), "mdi:variable", true, this._renderVariablesPanel(lang, current)));
+      }
     }
 
-    _renderSelection() {
-      const lang = this._lang();
-      const root = this.shadowRoot;
-      root.querySelectorAll(".tile").forEach((tile) => {
-        tile.classList.toggle("sel", tile.dataset.name === this._config.template);
-      });
-      const vars = root.querySelector(".variables");
-      if (vars) this._renderVariables(vars, lang);
-      const ed = root.querySelector(".template-editor");
-      if (ed) this._renderTemplateEditor(ed, lang);
-    }
+    // --- Panneau Template : nom, description, stockage, galerie
 
-    // --- Stockage
-
-    _renderStorage(lang) {
-      const entry = this._entry();
-      const admin = isAdmin(this._hass);
+    _renderTemplatePanel(lang, current) {
       const box = this._el("div");
-      box.appendChild(this._el("div", { class: "help", text: t(lang, "storageIntro") }));
-      box.appendChild(
-        this._el("ul", { class: "help" }, [
-          this._el("li", { text: t(lang, "storageLocal") }),
-          this._el("li", { text: tSub(lang, "storageShared", { title: SHARED_TITLE }) })
-        ])
-      );
-      const loc = localTemplates(this._dashConfig());
-      box.appendChild(
-        this._el("div", { class: "grow", text: tSub(lang, "localCount", { count: Object.keys(loc.local).length + Object.keys(loc.legacy).length }) })
-      );
-      const bar = this._el("div", { class: "bar" });
-      if (!entry.loaded) {
-        bar.appendChild(this._el("span", { class: "grow", text: "…" }));
-      } else if (entry.missing) {
-        bar.appendChild(this._el("span", { class: "grow", text: t(lang, admin ? "sharedMissing" : "sharedMissingUser") }));
-        if (admin) bar.appendChild(this._button(t(lang, "sharedCreate"), () => this._run(createShared(this._hass, entry.path, lang)), "primary"));
-      } else {
-        const text = entry.error
-          ? tSub(lang, "error", { message: entry.error.message || entry.error.code })
-          : tSub(lang, "sharedCount", { count: Object.keys(entry.templates).length });
-        bar.appendChild(this._el("span", { class: "grow", text: text }));
-        bar.appendChild(
-          this._el("a", { href: "/" + entry.path, target: "_blank", rel: "noopener" }, [this._button(t(lang, "sharedOpen"), null, "link")])
-        );
+      if (this._config.paste && !this._config.template) {
+        box.appendChild(this._el("div", { class: "help", text: t(lang, "pasteHelp") }));
+      } else if (!current) {
+        box.appendChild(this._el("div", { class: "help", text: t(lang, "noTemplateHelp") }));
       }
-      bar.appendChild(this._button(t(lang, "reload"), () => this._run(loadLibrary(this._hass, entry.path, true)), "link"));
-      box.appendChild(bar);
 
-      const legacyNames = Object.keys(loc.legacy);
-      if (admin && entry.loaded && !entry.missing && legacyNames.length) {
-        const count = legacyNames.length;
+      if (current && isAdmin(this._hass)) {
+        const tpl = normalizeTemplate(current.found.raw);
+        const nameInput = this._el("input", { class: "text" });
+        nameInput.value = current.name;
+        nameInput.addEventListener("change", () => this._rename(nameInput.value.trim()));
+
+        const scopeSelect = this._el("select", { class: "text" });
+        const entry = this._entry();
+        const sharedReady = entry.loaded && !entry.missing;
+        const currentScope = current.found.scope === SCOPE_SHARED ? SCOPE_SHARED : SCOPE_LOCAL;
+        [SCOPE_LOCAL, SCOPE_SHARED].forEach((scope) => {
+          const opt = this._el("option", { value: scope, text: this._scopeLabel(lang, scope) });
+          if (scope === SCOPE_SHARED && !sharedReady) opt.disabled = true;
+          if (scope === currentScope) opt.selected = true;
+          scopeSelect.appendChild(opt);
+        });
+        scopeSelect.addEventListener("change", () => this._move(scopeSelect.value));
+
         box.appendChild(
-          this._button(tSub(lang, "importLegacy", { count: count }), () =>
-            this._run(
-              saveShared(this._hass, entry.path, function (lib) {
-                legacyNames.forEach(function (n) {
-                  if (!hasVar(lib, n)) lib[n] = clone(loc.legacy[n]);
-                });
-              }).then(() =>
-                saveLocal(this._lovelaceObj(), this.lovelace, function (local, legacy) {
-                  legacyNames.forEach(function (n) {
-                    delete legacy[n];
-                  });
-                })
-              ),
-              tSub(lang, "importDone", { count: count })
-            )
-          )
+          this._el("div", { class: "grid2" }, [
+            this._el("div", null, [this._el("label", { class: "lbl", text: t(lang, "fieldName") }), nameInput]),
+            this._el("div", null, [this._el("label", { class: "lbl", text: t(lang, "fieldScope") }), scopeSelect])
+          ])
         );
+        box.appendChild(
+          this._el("div", {
+            class: "help",
+            text: currentScope === SCOPE_SHARED ? tSub(lang, "storageShared", { title: SHARED_TITLE }) : t(lang, "storageLocal")
+          })
+        );
+        if (!sharedReady && entry.loaded) {
+          const enable = this._el("button", { class: "link", type: "button", text: t(lang, "sharedEnable") });
+          enable.addEventListener("click", () => this._run(createShared(this._hass, entry.path, lang), null).catch(function () {}));
+          box.appendChild(enable);
+        }
+
+        const descInput = this._el("input", { class: "text" });
+        descInput.value = tpl.description;
+        descInput.addEventListener("change", () => {
+          this._updateTemplate(function (ed) {
+            ed.description = descInput.value;
+          });
+        });
+        box.appendChild(this._el("label", { class: "lbl", text: t(lang, "fieldDescription") }));
+        box.appendChild(descInput);
       }
+
+      box.appendChild(this._renderGallery(lang));
       return box;
     }
-
-    // --- Galerie
 
     _renderGallery(lang) {
       const box = this._el("div");
       const templates = this._templates();
+      const names = Object.keys(templates).sort();
+      if (!names.length) {
+        box.appendChild(this._el("div", { class: "help", text: t(lang, "noTemplates") }));
+        return box;
+      }
       const search = this._el("input", { class: "text", type: "search", placeholder: t(lang, "search") });
+      search.style.marginTop = "16px";
       search.value = this._search;
       const grid = this._el("div", { class: "gallery" });
       box.appendChild(search);
@@ -1451,47 +1637,38 @@
         grid.innerHTML = "";
         this._previews = [];
         const q = this._search.toLowerCase();
-        const names = Object.keys(templates)
-          .sort()
+        names
           .filter(function (n) {
             const d = (templates[n].raw && templates[n].raw.description) || "";
             return !q || n.toLowerCase().indexOf(q) !== -1 || String(d).toLowerCase().indexOf(q) !== -1;
+          })
+          .forEach((name, idx) => {
+            const found = templates[name];
+            const tpl = normalizeTemplate(found.raw);
+            const tile = this._el("div", { class: "tile" + (name === this._config.template ? " sel" : "") });
+            const thumb = this._el("div", { class: "thumb" });
+            if (tpl && tpl.kind === "card" && helpers && idx < PREVIEW_LIMIT) {
+              const scale = this._el("div", { class: "scale" });
+              try {
+                const card = createChild("card", renderTemplate(tpl, {}).config);
+                card.hass = this._hass;
+                scale.appendChild(card);
+                this._previews.push(card);
+              } catch (e) {}
+              thumb.appendChild(scale);
+            } else {
+              thumb.appendChild(this._el("div", { class: "none", text: tSub(lang, "noPreview", { kind: tpl ? tpl.kind : "?" }) }));
+            }
+            tile.appendChild(thumb);
+            tile.appendChild(
+              this._el("div", { class: "meta" }, [
+                this._el("div", { class: "name", text: name }),
+                this._el("span", { class: "badge" + (found.scope === SCOPE_SHARED ? " shared" : ""), text: this._scopeLabel(lang, found.scope) })
+              ])
+            );
+            tile.addEventListener("click", () => this._select(name));
+            grid.appendChild(tile);
           });
-        if (!names.length) {
-          grid.appendChild(this._el("div", { class: "help", text: t(lang, "noTemplates") }));
-          return;
-        }
-        names.forEach((name, idx) => {
-          const found = templates[name];
-          const tpl = normalizeTemplate(found.raw);
-          const tile = this._el("div", { class: "tile" });
-          tile.dataset.name = name;
-          if (name === this._config.template) tile.classList.add("sel");
-          const thumb = this._el("div", { class: "thumb" });
-          if (tpl && tpl.kind === "card" && helpers && idx < PREVIEW_LIMIT) {
-            const scale = this._el("div", { class: "scale" });
-            try {
-              const card = createChild("card", renderTemplate(tpl, {}).config);
-              card.hass = this._hass;
-              card.preview = true;
-              scale.appendChild(card);
-              this._previews.push(card);
-            } catch (e) {}
-            thumb.appendChild(scale);
-          } else {
-            thumb.appendChild(this._el("div", { class: "none", text: tSub(lang, "noPreview", { kind: tpl ? tpl.kind : "?" }) }));
-          }
-          tile.appendChild(thumb);
-          tile.appendChild(
-            this._el("div", { class: "meta" }, [
-              this._el("div", { class: "name", text: name }),
-              this._el("div", { class: "desc", text: (tpl && tpl.description) || "" }),
-              this._el("span", { class: "badge" + (found.scope === SCOPE_SHARED ? " shared" : ""), text: this._scopeLabel(lang, found.scope) })
-            ])
-          );
-          tile.addEventListener("click", () => this._select(name));
-          grid.appendChild(tile);
-        });
       };
       search.addEventListener("input", () => {
         this._search = search.value;
@@ -1521,13 +1698,12 @@
         if (Object.keys(kept).length) next.variables = kept;
         else delete next.variables;
       }
-      this._editing = null;
-      setDraft(null);
+      this._message = null;
       this._changed(next);
       this._render();
     }
 
-    // --- Variables de la carte
+    // --- Panneau Variables : valeurs de cette carte + réglages variables du template
 
     _guessSelector(name, def) {
       const n = name.toLowerCase();
@@ -1541,22 +1717,9 @@
       return { text: {} };
     }
 
-    _renderVariables(box, lang) {
-      const name = this._config.template;
-      const found = name && this._templates()[name];
-      const stamp = JSON.stringify(found || null);
-      // Ne pas recréer le formulaire à chaque config-changed (perte du focus)
-      const existing = box.querySelector("ha-form");
-      if (existing && box._template === name && box._stamp === stamp) {
-        existing.data = listToObject(this._config.variables);
-        return;
-      }
-      box._template = name;
-      box._stamp = stamp;
-      box.innerHTML = "";
-      const tpl = found && normalizeTemplate(found.raw);
-      if (!tpl) return;
-
+    _renderVariablesPanel(lang, current) {
+      const box = this._el("div");
+      const tpl = normalizeTemplate(current.found.raw);
       const names = new Set(Object.keys(tpl.fields));
       collectVars(tpl.config).forEach(function (v) {
         names.add(v);
@@ -1564,22 +1727,84 @@
       Object.keys(tpl.defaults).forEach(function (v) {
         names.add(v);
       });
+
       if (!names.size) {
         box.appendChild(this._el("div", { class: "help", text: t(lang, "noVariables") }));
-        return;
+      } else {
+        const fields = tpl.fields;
+        const schema = Array.from(names).map((v) => {
+          const f = isObject(fields[v]) ? fields[v] : {};
+          const item = { name: v, selector: isObject(f.selector) ? f.selector : this._guessSelector(v, tpl.defaults[v]) };
+          if (f.required) item.required = true;
+          return item;
+        });
+        box.appendChild(this._variablesForm(lang, tpl, schema));
       }
-      const fields = tpl.fields;
-      const schema = Array.from(names).map((v) => {
-        const f = isObject(fields[v]) ? fields[v] : {};
-        const item = { name: v, selector: isObject(f.selector) ? f.selector : this._guessSelector(v, tpl.defaults[v]) };
-        if (f.required) item.required = true;
-        return item;
-      });
-      const data = listToObject(this._config.variables);
 
+      if (tpl.kind !== "card") {
+        box.appendChild(this._el("div", { class: "help", text: tSub(lang, "nonCardHelp", { kind: tpl.kind }) }));
+        return box;
+      }
+      if (!isAdmin(this._hass)) return box;
+
+      // réglages variables du template
+      const ed = draftFromTemplate(current.name, current.found, this._config.variables);
+      box.appendChild(this._el("h4", { text: t(lang, "templateVars") }));
+      box.appendChild(this._el("div", { class: "help", text: t(lang, "templateVarsHelp") }));
+      const chips = this._el("div", { class: "chips" });
+      ed.vars.forEach((v) => {
+        const remove = this._el("button", { type: "button", title: tSub(lang, "removeVar", { name: v.name }), text: "✕" });
+        remove.addEventListener("click", () => {
+          this._updateTemplate(function (draft) {
+            draft.vars = draft.vars.filter(function (x) {
+              return !samePath(x.path, v.path);
+            });
+          });
+        });
+        chips.appendChild(this._el("span", { class: "chip" }, [v.name + " ", this._el("code", { text: v.path.join(".") }), remove]));
+      });
+      box.appendChild(chips);
+
+      const candidates = leafPaths(ed.card).filter(function (leaf) {
+        return !ed.vars.some(function (v) {
+          return samePath(v.path, leaf.path);
+        });
+      });
+      if (candidates.length) {
+        const pick = this._el("select", { class: "text" });
+        pick.appendChild(this._el("option", { value: "", text: t(lang, "addVariable") }));
+        candidates.forEach(function (c, i) {
+          const opt = document.createElement("option");
+          opt.value = String(i);
+          opt.textContent = c.path.join(" › ") + " = " + String(c.value).slice(0, 50);
+          pick.appendChild(opt);
+        });
+        pick.addEventListener("change", () => {
+          if (pick.value === "") return;
+          const leaf = candidates[Number(pick.value)];
+          this._updateTemplate(function (draft) {
+            const taken = draft.vars.map((x) => x.name).concat(Object.keys(draft.extraDefaults));
+            draft.vars.push({ name: suggestVarName(leaf.path, taken), path: leaf.path, label: "" });
+          });
+        });
+        box.appendChild(pick);
+      }
+      return box;
+    }
+
+    _variablesForm(lang, tpl, schema) {
+      const data = listToObject(this._config.variables);
+      const fields = tpl.fields;
       if (!customElements.get("ha-form")) {
-        box.appendChild(this._renderVariablesFallback(schema, data));
-        return;
+        const wrap = this._el("div");
+        schema.forEach((s) => {
+          const input = this._el("input", { class: "text" });
+          input.value = hasVar(data, s.name) ? valueToText(data[s.name]) : "";
+          input.addEventListener("change", () => this._setVariable(s.name, input.value));
+          wrap.appendChild(this._el("label", { class: "lbl", text: s.name }));
+          wrap.appendChild(input);
+        });
+        return wrap;
       }
       const form = document.createElement("ha-form");
       form.hass = this._hass;
@@ -1606,484 +1831,57 @@
         form.data = value;
         this._changed(next);
       });
-      box.appendChild(form);
+      return form;
     }
 
-    _renderVariablesFallback(schema, data) {
-      const wrap = this._el("div");
-      schema.forEach((s) => {
-        const input = this._el("input", { class: "text" });
-        input.value = hasVar(data, s.name) ? valueToText(data[s.name]) : "";
-        input.addEventListener("change", () => {
-          const vars = listToObject(this._config.variables);
-          if (input.value === "") delete vars[s.name];
-          else vars[s.name] = input.value;
-          const next = Object.assign({}, this._config);
-          if (Object.keys(vars).length) next.variables = vars;
-          else delete next.variables;
-          this._changed(next);
-        });
-        wrap.appendChild(this._el("label", { class: "lbl", text: s.name }));
-        wrap.appendChild(input);
-      });
-      return wrap;
+    _updateVariablesForm() {
+      const form = this.shadowRoot.querySelector("ha-form");
+      if (form) form.data = listToObject(this._config.variables);
     }
 
-    // --- Création / édition de template
-
-    _addCard() {
-      if (!this._editing) this._startNew();
-      else if (this._editing.kind === "card") this._editing.card = null;
-      this._message = null;
-      setDraft(null);
-      this._render();
-      const panel = this.shadowRoot.querySelector(".panel-create");
-      if (panel) {
-        panel.expanded = true;
-        panel.open = true;
-        panel.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+    _setVariable(name, value) {
+      const vars = listToObject(this._config.variables);
+      if (value === "") delete vars[name];
+      else vars[name] = value;
+      const next = Object.assign({}, this._config);
+      if (Object.keys(vars).length) next.variables = vars;
+      else delete next.variables;
+      this._changed(next);
     }
 
-    _startNew() {
-      const shared = this._entry();
-      this._editing = {
-        originalName: null,
-        originScope: null,
-        name: "",
-        description: "",
-        kind: "card",
-        scope: shared.loaded && !shared.missing ? SCOPE_SHARED : SCOPE_LOCAL,
-        card: null,
-        vars: [],
-        extraDefaults: {},
-        fields: {},
-        grid_options: null,
-        yamlInvalid: false
-      };
-    }
+    // --- Écriture des templates
 
-    _startEdit(name) {
-      const found = this._templates()[name];
-      if (!found || !normalizeTemplate(found.raw)) return;
-      this._editing = draftFromTemplate(name, found);
-      this._message = null;
-      this._render();
-    }
-
-    _startFromCard(card) {
-      if (!this._editing) this._startNew();
-      this._setCard(clone(card));
-    }
-
-    _setCard(card) {
-      const ed = this._editing;
-      if (isObject(card) && isObject(card.grid_options)) {
-        ed.grid_options = card.grid_options;
-        delete card.grid_options;
-      }
-      if (isObject(card)) {
-        delete card.view_layout;
-        delete card.layout_options;
-        delete card.visibility;
-      }
-      ed.card = card;
-      ed.vars = [];
-      bindDefaultVars(ed);
-      if (!ed.name && isObject(card)) {
-        const base = String(card.type || t(this._lang(), "untitledCard")).replace(/^custom:/, "").replace(/[^A-Za-z0-9_-]/g, "_");
-        ed.name = base + "_template";
-      }
-    }
-
-    _renderTemplateEditor(box, lang) {
-      if (this._editing && box._editing === this._editing) return;
-      box._editing = this._editing;
-      box.innerHTML = "";
-      if (!isAdmin(this._hass)) {
-        box.appendChild(this._el("div", { class: "help", text: t(lang, "adminOnly") }));
-        return;
-      }
-      if (!this._editing) {
-        const bar = this._el("div", { class: "bar" });
-        bar.appendChild(this._button("+ " + t(lang, "addCard"), () => this._addCard(), "primary"));
-        const found = this._config.template && this._templates()[this._config.template];
-        if (found && normalizeTemplate(found.raw)) {
-          bar.appendChild(this._button(t(lang, "editTemplate"), () => this._startEdit(this._config.template)));
+    _run(promise, successText) {
+      const lang = this._lang();
+      this._busy = true;
+      return Promise.resolve(promise).then(
+        () => {
+          this._busy = false;
+          this._notify(successText, "ok");
+        },
+        (err) => {
+          this._busy = false;
+          this._notify(errorText(lang, err), "err");
+          throw err;
         }
-        box.appendChild(bar);
-        return;
-      }
-
-      const ed = this._editing;
-      const entry = this._entry();
-
-      const nameInput = this._el("input", { class: "text" });
-      nameInput.value = ed.name;
-      nameInput.addEventListener("input", function () {
-        ed.name = nameInput.value.trim();
-      });
-      const scopeSelect = this._el("select", { class: "text" });
-      [SCOPE_LOCAL, SCOPE_SHARED].forEach((scope) => {
-        const opt = this._el("option", { value: scope, text: this._scopeLabel(lang, scope) });
-        if (scope === SCOPE_SHARED && (!entry.loaded || entry.missing)) opt.disabled = true;
-        if (ed.scope === scope) opt.selected = true;
-        scopeSelect.appendChild(opt);
-      });
-      scopeSelect.addEventListener("change", function () {
-        ed.scope = scopeSelect.value;
-      });
-      box.appendChild(
-        this._el("div", { class: "grid2" }, [
-          this._el("div", null, [this._el("label", { class: "lbl", text: t(lang, "fieldName") }), nameInput]),
-          this._el("div", null, [this._el("label", { class: "lbl", text: t(lang, "fieldScope") }), scopeSelect])
-        ])
       );
-
-      const descInput = this._el("input", { class: "text" });
-      descInput.value = ed.description;
-      descInput.addEventListener("input", function () {
-        ed.description = descInput.value;
-      });
-      const kindSelect = this._el("select", { class: "text" });
-      [
-        ["card", "kindCard"],
-        ["element", "kindElement"],
-        ["row", "kindRow"]
-      ].forEach((k) => {
-        const opt = this._el("option", { value: k[0], text: t(lang, k[1]) });
-        if (ed.kind === k[0]) opt.selected = true;
-        kindSelect.appendChild(opt);
-      });
-      kindSelect.addEventListener("change", () => {
-        ed.kind = kindSelect.value;
-        if (ed.kind !== "card" && !isObject(ed.card)) ed.card = {};
-        this._renderCardSection(box.querySelector(".card-section"), lang);
-      });
-      box.appendChild(
-        this._el("div", { class: "grid2" }, [
-          this._el("div", null, [this._el("label", { class: "lbl", text: t(lang, "fieldDescription") }), descInput]),
-          this._el("div", null, [this._el("label", { class: "lbl", text: t(lang, "fieldKind") }), kindSelect])
-        ])
-      );
-
-      box.appendChild(this._el("div", { class: "card-section" }));
-      box.appendChild(this._el("div", { class: "vars-section" }));
-
-      const bar = this._el("div", { class: "bar" });
-      bar.style.marginTop = "16px";
-      bar.appendChild(this._button(t(lang, "save"), () => this._saveEdit(lang), "primary"));
-      if (ed.originalName) bar.appendChild(this._button(t(lang, "remove"), () => this._deleteEdit(lang), "danger"));
-      bar.appendChild(
-        this._button(t(lang, "cancel"), () => {
-          this._editing = null;
-          setDraft(null);
-          this._render();
-        })
-      );
-      box.appendChild(bar);
-
-      this._renderCardSection(box.querySelector(".card-section"), lang);
     }
 
-    _renderCardSection(section, lang) {
-      const ed = this._editing;
-      section.innerHTML = "";
-      if (ed.kind === "card" && !isObject(ed.card)) {
-        this._renderPicker(section, lang);
-      } else if (ed.kind === "card") {
-        this._renderNativeEditor(section, lang);
-      } else {
-        section.appendChild(this._el("label", { class: "lbl", text: t(lang, "fieldConfig") }));
-        section.appendChild(this._yamlEditor(ed.card, (value) => this._cardChanged(value)));
-      }
-      this._renderVars(lang);
-      this._pushDraft();
-    }
-
-    _renderPicker(section, lang) {
-      section.appendChild(this._el("h4", { text: t(lang, "pickCard") }));
-      const bar = this._el("div", { class: "bar" });
-      bar.appendChild(
-        this._button(t(lang, "fromClipboard"), () => {
-          readCopiedCard().then((card) => {
-            if (!card) {
-              this._notifyInline(section, t(lang, "clipboardEmpty"));
-              return;
-            }
-            this._setCard(card);
-            this._rerenderEditor();
-          });
-        })
-      );
-      section.appendChild(bar);
-      const cards = listDashboardCards(this._dashConfig());
-      if (cards.length) {
-        const pick = this._el("select", { class: "text" });
-        pick.appendChild(this._el("option", { value: "", text: t(lang, "fromDashboard") }));
-        cards.forEach((c, i) => {
-          pick.appendChild(this._el("option", { value: String(i), text: c.label }));
-        });
-        pick.addEventListener("change", () => {
-          if (pick.value === "") return;
-          this._setCard(clone(cards[Number(pick.value)].config));
-          this._rerenderEditor();
-        });
-        section.appendChild(pick);
-      }
-      const holder = this._el("div", { class: "native" });
-      section.appendChild(holder);
-      loadNativeEditors().then((ok) => {
-        if (!holder.isConnected) return;
-        if (!ok) {
-          holder.appendChild(this._el("div", { class: "help", text: t(lang, "nativeUnavailable") }));
-          holder.appendChild(
-            this._yamlEditor({ type: "tile", entity: "" }, (value) => {
-              if (isObject(value) && value.type) {
-                this._setCard(value);
-                this._rerenderEditor();
-              }
-            })
-          );
-          return;
-        }
-        const picker = document.createElement("hui-card-picker");
-        picker.hass = this._hass;
-        picker.lovelace = this._dashConfig() || { views: [] };
-        picker.addEventListener("config-changed", (ev) => {
-          ev.stopPropagation();
-          const config = ev.detail && ev.detail.config;
-          if (!isObject(config) || String(config.type).indexOf("custom:declutter-plus") === 0) return;
-          this._setCard(clone(config));
-          this._rerenderEditor();
-        });
-        holder.appendChild(picker);
-      });
-    }
-
-    _renderNativeEditor(section, lang) {
-      const ed = this._editing;
-      const bar = this._el("div", { class: "bar" });
-      const changeBtn = this._button(t(lang, "changeCard"), () => {
-        ed.card = null;
-        ed.vars = [];
-        this._renderCardSection(section, lang);
-      });
-      const modeBtn = this._button(t(lang, "codeEditor"), null, "link");
-      bar.appendChild(this._el("h4", { class: "grow", text: String(ed.card.type || "") }));
-      bar.appendChild(modeBtn);
-      bar.appendChild(changeBtn);
-      section.appendChild(bar);
-      const holder = this._el("div", { class: "native" });
-      section.appendChild(holder);
-      loadNativeEditors().then((ok) => {
-        if (!holder.isConnected) return;
-        if (!ok) {
-          modeBtn.remove();
-          holder.appendChild(this._yamlEditor(ed.card, (value) => this._cardChanged(value)));
-          return;
-        }
-        const editor = document.createElement("hui-card-element-editor");
-        editor.hass = this._hass;
-        editor.lovelace = this._dashConfig() || { views: [] };
-        editor.value = ed.card;
-        editor.addEventListener("config-changed", (ev) => {
-          ev.stopPropagation();
-          if (ev.detail && isObject(ev.detail.config)) this._cardChanged(ev.detail.config);
-        });
-        editor.addEventListener("GUImode-changed", (ev) => {
-          ev.stopPropagation();
-          const gui = ev.detail && ev.detail.guiMode !== false;
-          modeBtn.textContent = t(lang, gui ? "codeEditor" : "visualEditor");
-        });
-        modeBtn.addEventListener("click", function () {
-          if (typeof editor.toggleMode === "function") editor.toggleMode();
-        });
-        holder.appendChild(editor);
-      });
-    }
-
-    _yamlEditor(value, onChange) {
-      const ed = this._editing;
-      if (customElements.get("ha-yaml-editor")) {
-        const yaml = document.createElement("ha-yaml-editor");
-        yaml.hass = this._hass;
-        yaml.defaultValue = value;
-        yaml.addEventListener("value-changed", (ev) => {
-          ev.stopPropagation();
-          ed.yamlInvalid = ev.detail.isValid === false;
-          if (!ed.yamlInvalid) onChange(ev.detail.value);
-        });
-        return yaml;
-      }
-      // Repli JSON si l'éditeur YAML de HA n'est pas chargé
-      const area = this._el("textarea", { class: "code" });
-      area.value = JSON.stringify(value || {}, null, 2);
-      area.addEventListener("input", () => {
-        try {
-          const parsed = JSON.parse(area.value || "{}");
-          ed.yamlInvalid = false;
-          onChange(parsed);
-        } catch (e) {
-          ed.yamlInvalid = true;
-        }
-      });
-      return area;
-    }
-
-    _rerenderEditor() {
-      const box = this.shadowRoot.querySelector(".template-editor");
-      if (!box) return;
-      box._editing = null;
-      this._renderTemplateEditor(box, this._lang());
-    }
-
-    _notifyInline(section, text) {
-      const note = this._el("div", { class: "notice err", text: text });
-      section.insertBefore(note, section.firstChild);
-      setTimeout(function () {
-        note.remove();
-      }, 5000);
-    }
-
-    _cardChanged(config) {
-      const ed = this._editing;
-      if (!ed) return;
-      ed.card = config;
-      // variables dont le réglage a disparu
-      ed.vars = ed.vars.filter(function (v) {
-        return getPath(config, v.path) !== undefined;
-      });
-      this._renderVars(this._lang());
-      this._pushDraft();
-    }
-
-    _pushDraft() {
-      const ed = this._editing;
-      setDraft(ed && ed.kind === "card" && isObject(ed.card) && ed.card.type ? clone(ed.card) : null);
-    }
-
-    _renderVars(lang) {
-      const ed = this._editing;
-      const section = this.shadowRoot.querySelector(".vars-section");
-      if (!section || !ed) return;
-      // ne pas recréer les champs en cours de saisie
-      const signature = JSON.stringify([ed.vars.map((v) => v.path), leafPaths(ed.card || {}).map((l) => l.path)]);
-      if (section._signature === signature) {
-        section.querySelectorAll(".var-value").forEach(function (el) {
-          const v = ed.vars[Number(el.dataset.index)];
-          if (v) el.textContent = v.path.join(".") + " = " + valueToText(getPath(ed.card, v.path));
-        });
-        return;
-      }
-      section._signature = signature;
-      section.innerHTML = "";
-      if (!isObject(ed.card)) return;
-      section.appendChild(this._el("h4", { text: t(lang, "panelVariables") }));
-      section.appendChild(this._el("div", { class: "help", text: t(lang, "varsHelp") }));
-
-      ed.vars.forEach((v, i) => {
-        const nameInput = this._el("input", { class: "text", placeholder: t(lang, "varName") });
-        nameInput.value = v.name;
-        nameInput.addEventListener("input", function () {
-          v.name = nameInput.value.trim();
-        });
-        const labelInput = this._el("input", { class: "text", placeholder: t(lang, "varLabel") });
-        labelInput.value = v.label;
-        labelInput.addEventListener("input", function () {
-          v.label = labelInput.value;
-        });
-        const row = this._el("div", { class: "var-row" }, [
-          this._el("div", { class: "path var-value", text: v.path.join(".") + " = " + valueToText(getPath(ed.card, v.path)) }),
-          nameInput,
-          labelInput,
-          this._button(t(lang, "removeVar"), () => {
-            ed.vars.splice(i, 1);
-            section._signature = null;
-            this._renderVars(lang);
-          }, "link")
-        ]);
-        row.querySelector(".var-value").dataset.index = String(i);
-        section.appendChild(row);
-      });
-
-      const candidates = leafPaths(ed.card).filter(function (leaf) {
-        return !ed.vars.some(function (v) {
-          return samePath(v.path, leaf.path);
-        });
-      });
-      candidates.sort(function (a, b) {
-        const ea = typeof a.value === "string" && ENTITY_RE.test(a.value) ? 0 : 1;
-        const eb = typeof b.value === "string" && ENTITY_RE.test(b.value) ? 0 : 1;
-        return ea - eb;
-      });
-      if (candidates.length) {
-        const pick = this._el("select", { class: "text" });
-        pick.appendChild(this._el("option", { value: "", text: t(lang, "addVariable") }));
-        candidates.forEach(function (c, i) {
-          const text = c.path.join(".") + " = " + String(c.value).slice(0, 60);
-          pick.appendChild(Object.assign(document.createElement("option"), { value: String(i), textContent: text }));
-        });
-        pick.addEventListener("change", () => {
-          if (pick.value === "") return;
-          const leaf = candidates[Number(pick.value)];
-          const taken = ed.vars.map((v) => v.name).concat(Object.keys(ed.extraDefaults));
-          ed.vars.push({ name: suggestVarName(leaf.path, taken), path: leaf.path, label: "" });
-          section._signature = null;
-          this._renderVars(lang);
-        });
-        section.appendChild(pick);
-      }
-
-      if (Object.keys(ed.extraDefaults).length) {
-        section.appendChild(this._el("label", { class: "lbl", text: t(lang, "extraDefaults") }));
-        section.appendChild(
-          this._yamlEditor(ed.extraDefaults, function (value) {
-            ed.extraDefaults = isObject(value) ? value : {};
-          })
-        );
-      }
-    }
-
-    _saveEdit(lang) {
-      const ed = this._editing;
-      if (!NAME_RE.test(ed.name)) {
-        this._notify(t(lang, "invalidName"), "err");
-        return;
-      }
-      if (!isObject(ed.card) || (ed.kind === "card" && !ed.card.type)) {
-        this._notify(t(lang, "noCard"), "err");
-        return;
-      }
-      if (ed.yamlInvalid) {
-        this._notify(t(lang, "invalidYaml"), "err");
-        return;
-      }
-      const badVar = ed.vars.find(function (v) {
-        return !NAME_RE.test(v.name);
-      });
-      if (badVar) {
-        this._notify(t(lang, "invalidName"), "err");
-        return;
-      }
+    // Écrit le brouillon à sa portée cible, en retirant l'ancienne version si le
+    // nom ou la portée ont changé.
+    _writeDraft(ed) {
       const raw = draftToRaw(ed);
       const newName = ed.name;
       const target = ed.scope;
       const origin = ed.originScope;
       const orig = ed.originalName;
-      const sameSpot = orig === newName && (origin === target || (origin === SCOPE_LEGACY && target === SCOPE_LOCAL));
-      const loc = localTemplates(this._dashConfig());
-      const exists = target === SCOPE_SHARED ? hasVar(this._entry().templates, newName) : hasVar(loc.local, newName) || hasVar(loc.legacy, newName);
-      if (exists && !sameSpot && !window.confirm(tSub(lang, "confirmOverwrite", { name: newName }))) return;
-
       const lovelace = this._lovelaceObj();
-      const dialogConfig = this.lovelace;
+      const extra = [this.lovelace];
+      const dialog = activeEditDialog();
+      if (dialog && dialog._params && dialog._params.lovelaceConfig) extra.push(dialog._params.lovelaceConfig);
       const hass = this._hass;
       const path = this._path();
-      if (target === SCOPE_LOCAL && !lovelace) {
-        this._notify(t(lang, "dashboardUnavailable"), "err");
-        return;
-      }
+      if (target === SCOPE_LOCAL && !lovelace) return Promise.reject(new Error("dashboard unavailable"));
 
       let chain;
       if (target === SCOPE_SHARED) {
@@ -2093,13 +1891,13 @@
         });
         if (orig && (origin === SCOPE_LOCAL || origin === SCOPE_LEGACY) && lovelace) {
           chain = chain.then(function () {
-            return saveLocal(lovelace, dialogConfig, function (local, legacy) {
+            return saveLocal(lovelace, extra, function (local, legacy) {
               delete (origin === SCOPE_LEGACY ? legacy : local)[orig];
             });
           });
         }
       } else {
-        chain = saveLocal(lovelace, dialogConfig, function (local, legacy) {
+        chain = saveLocal(lovelace, extra, function (local, legacy) {
           if (orig && origin === SCOPE_LEGACY) delete legacy[orig];
           if (orig && origin === SCOPE_LOCAL && orig !== newName) delete local[orig];
           delete legacy[newName];
@@ -2113,69 +1911,233 @@
           });
         }
       }
-
-      this._run(
-        chain.then(() => {
-          this._editing = null;
-          setDraft(null);
-          const next = Object.assign({}, this._config, { template: newName });
-          delete next.paste;
-          if (!next.variables && !orig) {
-            // nouvelle carte : reprend les valeurs actuelles comme valeurs de la carte
-            const values = {};
-            ed.vars.forEach(function (v) {
-              values[v.name] = getPath(ed.card, v.path);
-            });
-            if (Object.keys(values).length) next.variables = values;
-          }
-          this._changed(next);
-        }),
-        t(lang, "saved")
-      );
+      return chain.then(function () {
+        ed.originalName = newName;
+        ed.originScope = target;
+      });
     }
 
-    _deleteEdit(lang) {
-      const ed = this._editing;
-      const name = ed.originalName;
-      if (!window.confirm(tSub(lang, "confirmDelete", { name: name }))) return;
+    _exists(name, scope) {
+      if (scope === SCOPE_SHARED) return hasVar(this._entry().templates, name);
+      const loc = localTemplates(this._dashConfig());
+      return hasVar(loc.local, name) || hasVar(loc.legacy, name);
+    }
+
+    _updateTemplate(mutate, successText) {
+      const current = this._current();
+      if (!current) return Promise.resolve();
+      const ed = draftFromTemplate(current.name, current.found, this._config.variables);
+      mutate(ed);
+      return this._run(this._writeDraft(ed), successText || t(this._lang(), "saved")).catch(function () {});
+    }
+
+    _rename(name) {
+      const lang = this._lang();
+      const current = this._current();
+      if (!current || name === current.name) return;
+      if (!NAME_RE.test(name)) {
+        this._notify(t(lang, "invalidName"), "err");
+        return;
+      }
+      const ed = draftFromTemplate(current.name, current.found, this._config.variables);
+      if (this._exists(name, ed.scope) && !window.confirm(tSub(lang, "confirmOverwrite", { name: name }))) {
+        this._render();
+        return;
+      }
+      ed.name = name;
+      this._run(this._writeDraft(ed), t(lang, "saved"))
+        .then(() => {
+          const next = Object.assign({}, this._config, { template: name });
+          this._changed(next);
+          this._render();
+        })
+        .catch(function () {});
+    }
+
+    _move(scope) {
+      const lang = this._lang();
+      const current = this._current();
+      if (!current) return;
+      const ed = draftFromTemplate(current.name, current.found, this._config.variables);
+      if (this._exists(ed.name, scope) && !window.confirm(tSub(lang, "confirmOverwrite", { name: ed.name }))) {
+        this._render();
+        return;
+      }
+      ed.scope = scope;
+      this._run(this._writeDraft(ed), t(lang, "saved")).catch(function () {});
+    }
+
+    _defaultScope() {
+      const entry = this._entry();
+      return entry.loaded && !entry.missing ? SCOPE_SHARED : SCOPE_LOCAL;
+    }
+
+    // --- Actions de l'aperçu (boutons à droite)
+
+    _previewAction(action) {
+      const lang = this._lang();
+      if (!isAdmin(this._hass) && action !== "copy") {
+        this._notify(t(lang, "adminOnly"), "err");
+        return;
+      }
+      if (action === "add") this._addCard();
+      else if (action === "paste") this._savePaste();
+      else if (action === "edit") this._editCard();
+      else if (action === "delete") this._deleteTemplate();
+      else if (action === "duplicate") this._duplicateTemplate();
+      else if (action === "copy") this._copyCard();
+    }
+
+    _dialogFailed(opened) {
+      if (opened === false) this._notify(t(this._lang(), "dialogUnavailable"), "err");
+    }
+
+    _addCard() {
+      const lang = this._lang();
+      const ownConfig = Object.assign({ type: "custom:" + CARD_TAG }, this._config);
+      const editor = this;
+      openNativeCardDialog({
+        hass: this._hass,
+        mode: "add",
+        ownConfig: ownConfig,
+        onSave: function (card) {
+          const ed = draftFromCard(card, uniqueName(card.type, editor._templates()), editor._defaultScope());
+          return editor._writeDraft(ed).then(function () {
+            const next = Object.assign({}, ownConfig, { template: ed.name });
+            delete next.paste;
+            const values = draftValues(ed);
+            if (Object.keys(values).length) next.variables = values;
+            else delete next.variables;
+            return next;
+          }, function (err) {
+            throw new Error(errorText(lang, err));
+          });
+        }
+      }).then(this._dialogFailed.bind(this));
+    }
+
+    _editCard() {
+      const lang = this._lang();
+      const editor = this;
+      const ownConfig = Object.assign({ type: "custom:" + CARD_TAG }, this._config);
+      let ed;
+      if (this._config.paste && !this._config.template) {
+        ed = draftFromCard(this._config.paste, uniqueName(this._config.paste.type, this._templates()), this._defaultScope());
+      } else {
+        const current = this._current();
+        if (!current) return;
+        ed = draftFromTemplate(current.name, current.found, this._config.variables);
+        if (ed.kind !== "card") {
+          this._notify(tSub(lang, "nonCardHelp", { kind: ed.kind }), "err");
+          return;
+        }
+      }
+      openNativeCardDialog({
+        hass: this._hass,
+        mode: "edit",
+        card: ed.card,
+        ownConfig: ownConfig,
+        onSave: function (card) {
+          const isNew = !ed.originalName;
+          ed.card = clone(card);
+          if (isObject(ed.card.grid_options)) {
+            ed.grid_options = ed.card.grid_options;
+            delete ed.card.grid_options;
+          }
+          delete ed.card.view_layout;
+          delete ed.card.layout_options;
+          return editor._writeDraft(ed).then(function () {
+            const next = Object.assign({}, ownConfig, { template: ed.name });
+            delete next.paste;
+            if (isNew) {
+              const values = draftValues(ed);
+              if (Object.keys(values).length) next.variables = values;
+            }
+            return next;
+          }, function (err) {
+            throw new Error(errorText(lang, err));
+          });
+        }
+      }).then(this._dialogFailed.bind(this));
+    }
+
+    _savePaste() {
+      const lang = this._lang();
+      const paste = this._config.paste;
+      if (!isObject(paste)) return;
+      const ed = draftFromCard(paste, uniqueName(paste.type, this._templates()), this._defaultScope());
+      this._run(this._writeDraft(ed), t(lang, "saved"))
+        .then(() => {
+          const next = Object.assign({}, this._config, { template: ed.name });
+          delete next.paste;
+          const values = draftValues(ed);
+          if (Object.keys(values).length) next.variables = values;
+          this._changed(next);
+          this._render();
+        })
+        .catch(function () {});
+    }
+
+    _deleteTemplate() {
+      const lang = this._lang();
+      if (this._config.paste && !this._config.template) {
+        const next = Object.assign({}, this._config, { template: "" });
+        delete next.paste;
+        this._changed(next);
+        this._render();
+        return;
+      }
+      const current = this._current();
+      if (!current) return;
+      if (!window.confirm(tSub(lang, "confirmDelete", { name: current.name }))) return;
+      const scope = current.found.scope;
+      const name = current.name;
+      const dialog = activeEditDialog();
+      const extra = [this.lovelace];
+      if (dialog && dialog._params && dialog._params.lovelaceConfig) extra.push(dialog._params.lovelaceConfig);
       const chain =
-        ed.originScope === SCOPE_SHARED
+        scope === SCOPE_SHARED
           ? saveShared(this._hass, this._path(), function (lib) {
               delete lib[name];
             })
-          : saveLocal(this._lovelaceObj(), this.lovelace, function (local, legacy) {
-              delete (ed.originScope === SCOPE_LEGACY ? legacy : local)[name];
+          : saveLocal(this._lovelaceObj(), extra, function (local, legacy) {
+              delete (scope === SCOPE_LEGACY ? legacy : local)[name];
             });
-      this._run(
-        chain.then(() => {
-          this._editing = null;
-          setDraft(null);
-        }),
-        t(lang, "deleted")
-      );
+      this._run(chain, t(lang, "deleted"))
+        .then(() => {
+          const next = Object.assign({}, this._config, { template: "" });
+          delete next.variables;
+          this._changed(next);
+          this._render();
+        })
+        .catch(function () {});
     }
 
-    _notify(text, type) {
-      this._message = { text: text, type: type };
-      this._render();
-    }
-
-    _run(promise, successText) {
+    _duplicateTemplate() {
       const lang = this._lang();
-      return Promise.resolve(promise).then(
-        () => {
-          this._message = successText ? { text: successText, type: "ok" } : null;
+      const current = this._current();
+      if (!current) return;
+      const ed = draftFromTemplate(current.name, current.found, this._config.variables);
+      ed.name = uniqueName(current.name + "_copy", this._templates());
+      ed.originalName = null;
+      ed.originScope = null;
+      this._run(this._writeDraft(ed), t(lang, "saved"))
+        .then(() => {
+          this._changed(Object.assign({}, this._config, { template: ed.name }));
           this._render();
-        },
-        (err) => {
-          const msg = (err && (err.message || err.code)) || String(err);
-          this._message = {
-            text: msg === "dashboard unavailable" ? t(lang, "dashboardUnavailable") : tSub(lang, "error", { message: msg }),
-            type: "err"
-          };
-          this._render();
-        }
-      );
+        })
+        .catch(function () {});
+    }
+
+    _copyCard() {
+      const lang = this._lang();
+      const current = this._current();
+      let card = null;
+      if (current) card = renderTemplate(normalizeTemplate(current.found.raw), listToObject(this._config.variables)).config;
+      else if (this._config.paste) card = this._config.paste;
+      if (!card) return;
+      writeHaClipboard(card);
+      this._notify(t(lang, "copied"), "ok");
     }
   }
 

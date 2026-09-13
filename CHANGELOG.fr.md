@@ -2,6 +2,32 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.2.0 — 13 septembre 2026
+
+### Éditeur repensé, façon Bubble Card
+
+- Le panneau de gauche ne contient plus que les réglages de la carte : galerie
+  de templates, nom, stockage, description, valeurs et réglages des variables.
+- Toutes les actions passent dans l'aperçu à droite :
+  - **Ajouter une carte** ouvre la **popup du sélecteur de cartes** de Home
+    Assistant, puis l'éditeur de la carte choisie ; l'enregistrement crée le
+    template.
+  - La carte affiche la **barre d'édition** de Home Assistant : le crayon ouvre
+    l'éditeur de la carte (visuel ou code) et l'enregistrement met à jour le
+    template ; le menu permet aussi de dupliquer, copier ou supprimer le
+    template.
+- Les templates importés (par exemple des templates Bubble Card issus de
+  decluttering-card) se retravaillent désormais dans leur propre éditeur.
+- Renommer un template ou changer son stockage s'applique immédiatement.
+
+### Retiré
+
+- Le panneau « Créer ou modifier un template » et l'éditeur de template séparé.
+
+### Corrections
+
+- Le presse-papiers de cartes de Home Assistant est aussi lu dans `sessionStorage`.
+
 ## 1.1.0 — 13 septembre 2026
 
 ### Nouveautés

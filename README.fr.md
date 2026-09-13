@@ -11,10 +11,12 @@ moderne et graphique de [decluttering-card](https://github.com/custom-cards/decl
   nom du template et les valeurs de ses variables.
 - **Deux stockages au choix par template** : *ce dashboard* ou *partagé* avec
   tous les dashboards (voir [Stockage des templates](#stockage-des-templates)).
-- **Éditeur graphique** : options en panneaux repliables à gauche, aperçu en
-  direct de Home Assistant à droite. **Ajouter une carte** ouvre le sélecteur de
-  cartes de Home Assistant, puis l'éditeur visuel de la carte ; on choisit
-  quels réglages deviennent des variables.
+- **Édition façon pop-up Bubble Card** : le panneau de gauche ne contient que
+  les réglages de la carte (template, stockage, variables). Tout le reste se
+  fait dans l'aperçu à droite : **Ajouter une carte** ouvre la popup du
+  sélecteur de cartes de Home Assistant, et la barre d'édition de la carte ouvre
+  son propre éditeur (visuel ou code) — n'importe quelle carte, y compris les
+  cartes personnalisées comme Bubble Card.
 - **Galerie de templates** avec miniatures en direct, formulaire des variables
   avec vrais sélecteurs (entité, icône, pièce…).
 - **Copier-coller de cartes natives** : *Copier* une carte depuis son menu, puis
@@ -40,15 +42,17 @@ ressource `/local/declutter-plus.js` (type *Module JavaScript*).
 ## Démarrage
 
 1. Modifier un dashboard › *Ajouter une carte* › **Declutter Plus**.
-2. Cliquer **Ajouter une carte** sous l'aperçu et choisir une carte (ou coller
-   une carte copiée, ou copier une carte du dashboard). La configurer avec son
-   éditeur habituel.
-3. L'entité devient variable automatiquement ; **Rendre un réglage variable…**
-   pour les autres (nom, icône, couleur…).
-4. Choisir où l'enregistrer (*Ce dashboard* ou *Partagé*) puis **Enregistrer le
-   template**.
-5. Le réutiliser : ajouter une autre carte Declutter Plus, choisir le template
-   dans la galerie et remplir ses variables.
+2. Dans l'aperçu à droite, cliquer **Ajouter une carte** et choisir une carte
+   dans le sélecteur de Home Assistant, la configurer dans son éditeur habituel
+   puis enregistrer.
+3. Le template est créé (son entité devient une variable) et sélectionné. De
+   retour dans l'éditeur Declutter Plus, régler à gauche son nom, son stockage
+   et ses variables.
+4. Pour modifier la carte ensuite, utiliser le bouton d'édition de la carte dans
+   l'aperçu : son éditeur s'ouvre (visuel ou code) et l'enregistrement met à
+   jour le template.
+5. Le réutiliser : ajouter une autre carte Declutter Plus et choisir le template
+   dans la galerie.
 
 ## Stockage des templates
 
@@ -63,7 +67,7 @@ où vous voulez.
 - Le stockage partagé s'active une fois depuis le panneau *Stockage des
   templates* (administrateur). Inutile d'ouvrir ce dashboard.
 - Si les deux contiennent un template du même nom, le local est prioritaire.
-- Changer le stockage d'un template existant le déplace.
+- Changer le stockage d'un template existant le déplace ; changer son nom le renomme.
 - Un dashboard en mode YAML ne peut pas être modifié depuis l'interface :
   utiliser le stockage partagé.
 
