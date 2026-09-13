@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.6.0";
+  const VERSION = "1.6.1";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -52,6 +52,8 @@
       importEmpty: "No section with cards on this dashboard.",
       importCount: "{count} card(s)",
       imported: "{count} card(s) imported.",
+      popupNoHash: "Pop-up without hash",
+      popupHidden: "Pop-up content is hidden in edit mode. Edit this card to see it.",
       sectionLabel: "Section {index}",
       panelTemplate: "Template",
       panelVariables: "Variables",
@@ -111,6 +113,8 @@
       importEmpty: "Aucune section avec des cartes sur ce dashboard.",
       importCount: "{count} carte(s)",
       imported: "{count} carte(s) importée(s).",
+      popupNoHash: "Pop-up sans hash",
+      popupHidden: "Le contenu de la pop-up est masqué en mode édition. Modifiez cette carte pour le voir.",
       sectionLabel: "Section {index}",
       panelTemplate: "Template",
       panelVariables: "Variables",
@@ -493,6 +497,34 @@
     return out;
   }
 
+  function isBubblePopup(config) {
+    return isObject(config) && config.type === "custom:bubble-card" && config.card_type === "pop-up";
+  }
+
+  // Encart réduit d'une pop-up Bubble Card, comme Bubble l'affiche en mode édition.
+  // Dans l'aperçu de l'éditeur, Bubble afficherait la pop-up complète.
+  function createPopupPlaceholder(config, lang) {
+    const card = document.createElement(customElements.get("ha-card") ? "ha-card" : "div");
+    card.style.cssText = "display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:56px;box-sizing:border-box";
+    if (customElements.get("ha-icon")) {
+      const icon = document.createElement("ha-icon");
+      icon.icon = "mdi:information-outline";
+      icon.style.cssText = "color:var(--secondary-text-color);flex:none";
+      card.appendChild(icon);
+    }
+    const info = document.createElement("div");
+    const hash = document.createElement("div");
+    hash.style.cssText = "font-weight:500;font-size:14px";
+    hash.textContent = config.hash || t(lang, "popupNoHash");
+    const hint = document.createElement("div");
+    hint.style.cssText = "font-size:12px;color:var(--secondary-text-color)";
+    hint.textContent = t(lang, "popupHidden");
+    info.appendChild(hash);
+    info.appendChild(hint);
+    card.appendChild(info);
+    return card;
+  }
+
   // ---------------------------------------------------------------------------
   // Helpers de cartes de HA (chargés une fois)
 
@@ -528,11 +560,12 @@
   // Carte dans son propre conteneur hui-card, comme dans une section : les cartes
   // qui masquent leur conteneur (pop-up Bubble Card fermée) ou les conditions de
   // visibilité n'agissent que sur leur case, pas sur toute la carte Declutter Plus.
-  function createHuiCard(config, hass) {
+  function createHuiCard(config, hass, preview) {
     if (!customElements.get("hui-card")) return helpers.createCardElement(config);
     const el = document.createElement("hui-card");
     el.layout = "grid";
-    el.preview = false;
+    // preview = mode édition du dashboard : Bubble Card y affiche ses pop-ups réduites
+    el.preview = !!preview;
     if (hass) el.hass = hass;
     el.config = config;
     if (typeof el.load === "function") el.load();
@@ -1384,8 +1417,20 @@
       super();
       this._config = null;
       this._hass = null;
+      this._preview = false;
       this._cards = [];
       this.attachShadow({ mode: "open" });
+    }
+
+    set preview(v) {
+      this._preview = !!v;
+      this._cards.forEach(function (card) {
+        if (card.localName === "hui-card") card.preview = !!v;
+      });
+    }
+
+    get preview() {
+      return this._preview;
     }
 
     setConfig(config) {
@@ -1416,7 +1461,7 @@
       this._config.cards.forEach((config, index) => {
         const cell = document.createElement("div");
         cell.className = "dp-cell";
-        const card = createHuiCard(config, this._hass);
+        const card = createHuiCard(config, this._hass, this._preview);
         card.addEventListener("ll-rebuild", (ev) => {
           if (card.localName === "hui-card") return;
           ev.stopPropagation();
@@ -1651,7 +1696,7 @@
 
     _createChild(kind, config) {
       if (kind === "card" && !this._editable() && !isStack(config) && config.type !== GRID_TYPE) {
-        return createHuiCard(config, this._hass);
+        return createHuiCard(config, this._hass, this._preview);
       }
       return createChild(kind, config);
     }
@@ -1666,7 +1711,9 @@
           const list = this._editable() && isStack(rendered.config);
           const cards = list ? rendered.config.cards : [rendered.config];
           this._mount(
-            cards.map((config) => this._createChild(this.constructor.kind, config)),
+            cards.map((config) =>
+              this._editable() && isBubblePopup(config) ? createPopupPlaceholder(config, lang) : this._createChild(this.constructor.kind, config)
+            ),
             list ? rendered.config.type : null,
             cards
           );

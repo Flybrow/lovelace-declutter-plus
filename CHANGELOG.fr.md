@@ -2,6 +2,18 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.6.1 — 13 septembre 2026
+
+### Corrections
+
+- Les pop-ups Bubble Card d'un template se comportent comme dans une section :
+  - dashboard en mode édition : affichées réduites (encart de Bubble) au lieu
+    d'être masquées, le mode édition étant désormais transmis aux cartes du
+    template ;
+  - éditeur Declutter Plus : affichées en encart réduit (hash et indication) au
+    lieu de la pop-up complète ; la pop-up complète n'apparaît que dans son
+    propre éditeur, quand on modifie cette carte.
+
 ## 1.6.0 — 13 septembre 2026
 
 - **Importer une section** : un nouveau bouton sous **Ajouter une carte** dans

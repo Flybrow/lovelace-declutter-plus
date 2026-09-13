@@ -2,6 +2,18 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.6.1 — 13 September 2026
+
+### Fixes
+
+- Bubble Card pop-ups in a template now behave like in a section:
+  - dashboard in edit mode: shown minimized (Bubble's own placeholder) instead
+    of being hidden, since edit mode is now passed on to the cards of the
+    template;
+  - Declutter Plus editor: shown as a minimized placeholder (hash and hint)
+    instead of the full pop-up; the full pop-up only appears in its own editor,
+    when you edit that card.
+
 ## 1.6.0 — 13 September 2026
 
 - **Import a section**: a new button under **Add card** in the preview lists the
