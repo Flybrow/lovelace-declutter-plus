@@ -2,6 +2,30 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.8.0 — 13 septembre 2026
+
+### Protection des templates partagés
+
+- Le dashboard de stockage est renommé **⚠ Declutter Plus – Templates (ne pas
+  supprimer)** pour que l'avertissement apparaisse dans *Paramètres › Tableaux
+  de bord*.
+- Supprimer un dashboard qui stocke des templates Declutter Plus demande
+  confirmation, avec le nombre de templates. Au mieux : uniquement dans un onglet
+  où Declutter Plus est chargé.
+- Les templates partagés sont sauvegardés automatiquement dans les données
+  utilisateur Home Assistant de l'administrateur. Quand le dashboard de stockage
+  est introuvable, l'éditeur propose **Restaurer les templates** (le dashboard
+  est recréé et rempli).
+
+### Performances
+
+- Éditeur beaucoup plus léger : les miniatures des templates ne sont créées que
+  lorsqu'elles sont visibles, réutilisées d'un rendu à l'autre et rafraîchies au
+  plus une fois par minute au lieu d'à chaque changement d'état (mesuré : 300 → 0
+  redessins de miniatures pour 100 changements d'état, 12 → 3 cartes créées pour
+  3 rafraîchissements). L'éditeur ne se redessine plus quand les templates n'ont
+  pas changé, et affiche au plus 24 miniatures.
+
 ## 1.7.0 — 13 septembre 2026
 
 ### Changements

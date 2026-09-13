@@ -87,6 +87,19 @@ où vous voulez.
 - Un dashboard en mode YAML ne peut pas être modifié depuis l'interface :
   utiliser le stockage partagé.
 
+### Protection des templates partagés
+
+Home Assistant ne permet pas de verrouiller un dashboard ; Declutter Plus ajoute
+trois garde-fous :
+
+- le dashboard de stockage s'intitule **⚠ Declutter Plus – Templates (ne pas
+  supprimer)** dans *Paramètres › Tableaux de bord* ;
+- supprimer un dashboard qui stocke des templates demande confirmation, avec le
+  nombre de templates (uniquement dans un onglet où Declutter Plus est chargé) ;
+- les templates partagés sont **sauvegardés automatiquement** côté serveur
+  (données de l'utilisateur administrateur). Si le dashboard de stockage est
+  supprimé, l'éditeur Declutter Plus propose **Restaurer les templates**.
+
 ## Options de la carte
 
 | Option      | Type            | Défaut           | Description                                             |

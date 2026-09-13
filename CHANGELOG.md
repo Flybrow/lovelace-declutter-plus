@@ -2,6 +2,27 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.8.0 — 13 September 2026
+
+### Protection of shared templates
+
+- The storage dashboard is renamed **⚠ Declutter Plus – Templates (do not
+  delete)** so the warning shows in *Settings › Dashboards*.
+- Deleting a dashboard that stores Declutter Plus templates asks for
+  confirmation, with the number of templates. Best effort: only in a browser tab
+  where Declutter Plus is loaded.
+- Shared templates are backed up automatically in the administrator's Home
+  Assistant user data. When the storage dashboard is missing, the editor offers
+  **Restore templates** (the dashboard is recreated and filled again).
+
+### Performance
+
+- Much lighter editor: template thumbnails are built only when visible, reused
+  between renders and refreshed at most once a minute instead of on every state
+  change (measured: 300 → 0 thumbnail redraws for 100 state changes, 12 → 3
+  cards built for 3 editor refreshes). The editor no longer redraws when the
+  templates did not change, and at most 24 thumbnails are shown.
+
 ## 1.7.0 — 13 September 2026
 
 ### Changes

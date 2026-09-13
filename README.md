@@ -79,6 +79,18 @@ A template is a reusable card model. Cards themselves go wherever you want.
 - Changing the storage of an existing template moves it; renaming renames it.
 - Dashboards in YAML mode cannot be modified from the UI: use shared storage.
 
+### Protecting shared templates
+
+Home Assistant cannot lock a dashboard, so Declutter Plus adds three safeguards:
+
+- the storage dashboard is titled **⚠ Declutter Plus – Templates (do not
+  delete)** in *Settings › Dashboards*;
+- deleting a dashboard that stores templates asks for confirmation, with the
+  number of templates (only in a browser tab where Declutter Plus is loaded);
+- shared templates are **backed up automatically** on the server (administrator
+  user data). If the storage dashboard is deleted, the Declutter Plus editor
+  offers **Restore templates**.
+
 ## Card options
 
 | Option      | Type           | Default          | Description                                              |

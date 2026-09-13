@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.7.0";
+  const VERSION = "1.8.0";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -17,7 +17,7 @@
   const GRID_REFRESH_MS = [50, 300, 1000];
   const EDITOR_TAG = "declutter-plus-card-editor";
   const SHARED_DASHBOARD = "declutter-plus";
-  const SHARED_TITLE = "Declutter Plus – Templates";
+  const BACKUP_KEY = "declutter_plus_backup_";
   const TEMPLATES_KEY = "declutter_plus_templates";
   const LEGACY_KEY = "decluttering_templates";
   const SCOPE_LOCAL = "local";
@@ -30,7 +30,8 @@
   const ENTITY_RE = /^[a-z0-9_]+\.[a-z0-9_]+$/;
   const CLIPBOARD_KEY = "dashboardCardClipboard";
   const MAX_VAR_PASSES = 10;
-  const PREVIEW_LIMIT = 60;
+  const PREVIEW_LIMIT = 24;
+  const PREVIEW_REFRESH_MS = 60000;
   const DOM_GUARD = 20000;
   const DIRTY_FRAMES = 10;
   const CLOSE_TIMEOUT_MS = 1500;
@@ -53,6 +54,13 @@
       importCount: "{count} card(s)",
       imported: "{count} card(s) imported.",
       popupNoHash: "Pop-up without hash",
+      sharedTitle: "⚠ Declutter Plus – Templates (do not delete)",
+      backupFound: "Shared storage is missing, but a backup of {count} template(s) from {date} exists.",
+      backupRestore: "Restore templates",
+      restored: "{count} template(s) restored.",
+      confirmDeleteStorage: "This dashboard stores {count} shared Declutter Plus template(s), used by Declutter Plus cards on your dashboards.\n\nDeleting it removes them everywhere. A backup is kept and can be restored from the Declutter Plus card editor.\n\nDelete it anyway?",
+      confirmDeleteLocal: "This dashboard stores {count} Declutter Plus template(s). Deleting it removes them.\n\nDelete it anyway?",
+      deleteCancelled: "Deletion cancelled.",
       popupHidden: "Pop-up content is hidden in edit mode. Edit this card to see it.",
       sectionLabel: "Section {index}",
       panelTemplate: "Template",
@@ -114,6 +122,13 @@
       importCount: "{count} carte(s)",
       imported: "{count} carte(s) importée(s).",
       popupNoHash: "Pop-up sans hash",
+      sharedTitle: "⚠ Declutter Plus – Templates (ne pas supprimer)",
+      backupFound: "Le stockage partagé est introuvable, mais une sauvegarde de {count} template(s) du {date} existe.",
+      backupRestore: "Restaurer les templates",
+      restored: "{count} template(s) restauré(s).",
+      confirmDeleteStorage: "Ce dashboard stocke {count} template(s) Declutter Plus partagé(s), utilisé(s) par des cartes Declutter Plus de vos dashboards.\n\nLe supprimer les efface partout. Une sauvegarde est conservée et peut être restaurée depuis l'éditeur de la carte Declutter Plus.\n\nLe supprimer quand même ?",
+      confirmDeleteLocal: "Ce dashboard stocke {count} template(s) Declutter Plus. Le supprimer les efface.\n\nLe supprimer quand même ?",
+      deleteCancelled: "Suppression annulée.",
       popupHidden: "Le contenu de la pop-up est masqué en mode édition. Modifiez cette carte pour le voir.",
       sectionLabel: "Section {index}",
       panelTemplate: "Template",
@@ -903,7 +918,7 @@
       }
       sections.push({ type: "grid", cards: cards });
     });
-    return [{ title: SHARED_TITLE, path: "templates", type: "sections", max_columns: 4, sections: sections }];
+    return [{ title: t(lang, "sharedTitle"), path: "templates", type: "sections", max_columns: 4, sections: sections }];
   }
 
   function withSharedViews(config, path, lang) {
@@ -920,13 +935,112 @@
     // administrateurs de langues différentes réécrivent le dashboard en boucle
     const shape = function (views) {
       return JSON.stringify(views, function (key, value) {
-        return key === "content" ? undefined : value;
+        return key === "content" || key === "title" ? undefined : value;
       });
     };
     if (shape(next.views) === shape(config.views)) return;
     hass.callWS({ type: "lovelace/config/save", url_path: path, config: next }).catch(function (e) {
       console.warn("[declutter-plus] shared storage view sync failed", e);
     });
+  }
+
+  // Sauvegarde des templates partagés dans les données utilisateur de HA (côté
+  // serveur), pour restaurer après une suppression du dashboard de stockage.
+  const backupSignatures = {};
+
+  function writeBackup(hass, path, templates, always) {
+    if (!isAdmin(hass) || !hass.callWS) return;
+    const count = Object.keys(templates).length;
+    if (!count && !always) return; // ne pas écraser une sauvegarde par un stockage vide
+    const signature = JSON.stringify(templates);
+    if (backupSignatures[path] === signature) return;
+    backupSignatures[path] = signature;
+    hass
+      .callWS({
+        type: "frontend/set_user_data",
+        key: BACKUP_KEY + path,
+        value: { path: path, saved_at: new Date().toISOString(), templates: clone(templates) }
+      })
+      .catch(function (e) {
+        delete backupSignatures[path];
+        console.warn("[declutter-plus] backup failed", e);
+      });
+  }
+
+  function readBackup(hass, path) {
+    return hass.callWS({ type: "frontend/get_user_data", key: BACKUP_KEY + path }).then(
+      function (result) {
+        const value = result && result.value;
+        return isObject(value) && isObject(value.templates) && Object.keys(value.templates).length ? value : null;
+      },
+      function () {
+        return null;
+      }
+    );
+  }
+
+  // Titre d'avertissement du dashboard de stockage (visible dans Paramètres).
+  const titleChecked = {};
+
+  function syncSharedTitle(hass, path) {
+    if (!isAdmin(hass) || titleChecked[path]) return;
+    titleChecked[path] = true;
+    const titles = Object.keys(STRINGS).map(function (lang) {
+      return t(lang, "sharedTitle");
+    });
+    hass
+      .callWS({ type: "lovelace/dashboards/list" })
+      .then(function (list) {
+        const dash = (Array.isArray(list) ? list : []).find(function (d) {
+          return d.url_path === path;
+        });
+        if (!dash || titles.indexOf(dash.title) !== -1) return null;
+        return hass.callWS({ type: "lovelace/dashboards/update", dashboard_id: dash.id, title: t(resolveLang(hass), "sharedTitle") });
+      })
+      .catch(function (e) {
+        console.warn("[declutter-plus] storage title update failed", e);
+      });
+  }
+
+  // Demande confirmation avant de supprimer un dashboard qui stocke des templates.
+  // Ne protège que les suppressions faites dans un onglet où le plugin est chargé.
+  function installDeleteGuard(hass) {
+    const conn = hass && hass.connection;
+    if (!conn || conn.__declutterPlusGuard || typeof conn.sendMessagePromise !== "function") return;
+    conn.__declutterPlusGuard = true;
+    const original = conn.sendMessagePromise;
+    conn.sendMessagePromise = function (message) {
+      const args = arguments;
+      if (!message || message.type !== "lovelace/dashboards/delete") return original.apply(conn, args);
+      const lang = resolveLang(hass);
+      return original
+        .call(conn, { type: "lovelace/dashboards/list" })
+        .then(function (list) {
+          const dash = (Array.isArray(list) ? list : []).find(function (d) {
+            return d.id === message.dashboard_id;
+          });
+          if (!dash) return null;
+          return original.call(conn, { type: "lovelace/config", url_path: dash.url_path }).then(
+            function (config) {
+              return { path: dash.url_path, count: Object.keys(listToObject(config && config[TEMPLATES_KEY])).length };
+            },
+            function () {
+              return null;
+            }
+          );
+        })
+        .catch(function () {
+          return null;
+        })
+        .then(function (info) {
+          if (info && info.count) {
+            const shared = info.path === SHARED_DASHBOARD || !!libraries[info.path];
+            const text = tSub(lang, shared ? "confirmDeleteStorage" : "confirmDeleteLocal", { count: info.count });
+            if (!window.confirm(text)) return Promise.reject({ code: "cancelled", message: t(lang, "deleteCancelled") });
+          }
+          return original.apply(conn, args);
+        });
+    };
   }
 
   function loadLibrary(hass, path, force) {
@@ -943,6 +1057,8 @@
           entry.error = null;
           entry.templates = listToObject(isObject(config) ? config[TEMPLATES_KEY] : null);
           syncSharedViews(hass, path, config);
+          syncSharedTitle(hass, path);
+          writeBackup(hass, path, entry.templates, false);
         },
         function (err) {
           entry.templates = {};
@@ -983,7 +1099,11 @@
         const next = Object.assign({}, config);
         next[TEMPLATES_KEY] = listToObject(next[TEMPLATES_KEY]);
         mutate(next[TEMPLATES_KEY]);
-        return hass.callWS({ type: "lovelace/config/save", url_path: path, config: withSharedViews(next, path, resolveLang(hass)) });
+        return hass
+          .callWS({ type: "lovelace/config/save", url_path: path, config: withSharedViews(next, path, resolveLang(hass)) })
+          .then(function () {
+            writeBackup(hass, path, next[TEMPLATES_KEY], true);
+          });
       })
       .then(function () {
         return loadLibrary(hass, path, true);
@@ -993,7 +1113,7 @@
   function createShared(hass, path, lang) {
     const base = {
       url_path: path,
-      title: SHARED_TITLE,
+      title: t(lang, "sharedTitle"),
       icon: "mdi:puzzle-outline",
       show_in_sidebar: false,
       require_admin: false
@@ -1547,6 +1667,7 @@
     set hass(hass) {
       const first = !this._hass;
       this._hass = hass;
+      if (first) installDeleteGuard(hass);
       this._children.forEach(function (child) {
         child.hass = hass;
       });
@@ -1992,7 +2113,17 @@
       this._built = false;
       this._lastLang = null;
       this._busy = false;
-      this._onLibrary = this._render.bind(this);
+      this._thumbs = new Map();
+      this._previewsAt = 0;
+      this._librarySignature = null;
+      this._backup = undefined;
+      // ne redessiner que si les templates ont vraiment changé
+      this._onLibrary = (entry) => {
+        const signature = JSON.stringify([entry.missing, entry.templates]);
+        if (signature === this._librarySignature) return;
+        this._librarySignature = signature;
+        this._render();
+      };
       this.attachShadow({ mode: "open" });
     }
 
@@ -2007,15 +2138,21 @@
       const first = !this._hass;
       this._hass = hass;
       if (first) {
+        installDeleteGuard(hass);
         loadHelpers().then(this._render.bind(this), function () {});
-        loadLibrary(hass, this._path(), true).then(this._render.bind(this));
+        loadLibrary(hass, this._path(), true).then(this._onLibrary);
       } else if (resolveLang(hass) !== this._lastLang) {
         this._render();
         return;
       }
-      this._previews.forEach(function (p) {
-        p.hass = hass;
-      });
+      // miniatures : rafraîchies au plus une fois par minute (cartes lourdes)
+      const now = Date.now();
+      if (now - this._previewsAt > PREVIEW_REFRESH_MS) {
+        this._previewsAt = now;
+        this._previews.forEach(function (p) {
+          p.hass = hass;
+        });
+      }
       const form = this.shadowRoot.querySelector("ha-form");
       if (form) form.hass = hass;
     }
@@ -2186,10 +2323,10 @@
         box.appendChild(
           this._el("div", {
             class: "help",
-            text: currentScope === SCOPE_SHARED ? tSub(lang, "storageShared", { title: SHARED_TITLE }) : t(lang, "storageLocal")
+            text: currentScope === SCOPE_SHARED ? tSub(lang, "storageShared", { title: t(lang, "sharedTitle") }) : t(lang, "storageLocal")
           })
         );
-        if (!sharedReady && entry.loaded) {
+        if (!sharedReady && entry.loaded && !this._backup) {
           const enable = this._el("button", { class: "link", type: "button", text: t(lang, "sharedEnable") });
           enable.addEventListener("click", () => this._run(createShared(this._hass, entry.path, lang), null).catch(function () {}));
           box.appendChild(enable);
@@ -2206,8 +2343,48 @@
         box.appendChild(descInput);
       }
 
+      this._renderBackup(box, lang);
       box.appendChild(this._renderGallery(lang));
       return box;
+    }
+
+    // Stockage partagé supprimé : proposer la restauration de la sauvegarde
+    _renderBackup(box, lang) {
+      const entry = this._entry();
+      if (!isAdmin(this._hass) || !entry.loaded || !entry.missing) return;
+      if (this._backup === undefined) {
+        this._backup = null;
+        readBackup(this._hass, entry.path).then((backup) => {
+          this._backup = backup;
+          if (backup) this._render();
+        });
+        return;
+      }
+      const backup = this._backup;
+      if (!backup) return;
+      const count = Object.keys(backup.templates).length;
+      let date = backup.saved_at;
+      try {
+        date = new Date(backup.saved_at).toLocaleString(lang);
+      } catch (e) {}
+      box.appendChild(this._el("div", { class: "notice err", text: tSub(lang, "backupFound", { count: count, date: date }) }));
+      const restore = this._el("button", { class: "link", type: "button", text: t(lang, "backupRestore") });
+      restore.addEventListener("click", () => {
+        const hass = this._hass;
+        const chain = createShared(hass, entry.path, lang).then(function () {
+          return saveShared(hass, entry.path, function (lib) {
+            Object.keys(backup.templates).forEach(function (name) {
+              lib[name] = clone(backup.templates[name]);
+            });
+          });
+        });
+        this._run(chain, tSub(lang, "restored", { count: count }))
+          .then(() => {
+            this._backup = undefined;
+          })
+          .catch(function () {});
+      });
+      box.appendChild(restore);
     }
 
     _renderGallery(lang) {
@@ -2240,14 +2417,7 @@
             const tile = this._el("div", { class: "tile" + (name === this._config.template ? " sel" : "") });
             const thumb = this._el("div", { class: "thumb" });
             if (tpl && tpl.kind === "card" && helpers && idx < PREVIEW_LIMIT) {
-              const scale = this._el("div", { class: "scale" });
-              try {
-                const card = createChild("card", renderTemplate(tpl, {}).config);
-                card.hass = this._hass;
-                scale.appendChild(card);
-                this._previews.push(card);
-              } catch (e) {}
-              thumb.appendChild(scale);
+              thumb.appendChild(this._thumbnail(name, tpl));
             } else {
               thumb.appendChild(this._el("div", { class: "none", text: tSub(lang, "noPreview", { kind: tpl ? tpl.kind : "?" }) }));
             }
@@ -2268,6 +2438,50 @@
       });
       fill();
       return box;
+    }
+
+    // Miniature d'un template : réutilisée tant que le template ne change pas, et
+    // créée seulement quand elle devient visible.
+    _thumbnail(name, tpl) {
+      const config = renderTemplate(tpl, {}).config;
+      const key = name + ":" + JSON.stringify(config);
+      let scale = this._thumbs.get(key);
+      if (!scale) {
+        scale = this._el("div", { class: "scale" });
+        this._thumbs.set(key, scale);
+        const build = () => {
+          if (scale._built) return;
+          scale._built = true;
+          try {
+            const card = createChild("card", config);
+            card.hass = this._hass;
+            scale.appendChild(card);
+            scale._card = card;
+          } catch (e) {}
+        };
+        if (typeof IntersectionObserver === "function") {
+          const observer = new IntersectionObserver(function (entries) {
+            if (entries.some((e) => e.isIntersecting)) {
+              observer.disconnect();
+              build();
+            }
+          });
+          observer.observe(scale);
+        } else {
+          build();
+        }
+      }
+      if (scale._card) this._previews.push(scale._card);
+      else this._pendingPreview(scale);
+      return scale;
+    }
+
+    _pendingPreview(scale) {
+      // miniature construite plus tard : l'ajouter à la liste une fois créée
+      const check = () => {
+        if (scale._card && this._previews.indexOf(scale._card) === -1) this._previews.push(scale._card);
+      };
+      setTimeout(check, 500);
     }
 
     _select(name) {
