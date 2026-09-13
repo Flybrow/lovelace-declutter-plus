@@ -2,6 +2,20 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.5.6 — 13 September 2026
+
+### Fixes
+
+- Adding a Bubble Card pop-up to a template hid the whole Declutter Plus card
+  once saved: a closed pop-up hides its nearest card container, which was the
+  Declutter Plus card itself. Each card of a template now gets its own Home
+  Assistant card container (like in a section), so the pop-up only hides its
+  own cell. Per-card `visibility` conditions now work too.
+- Shared templates are always reloaded from storage (no stale template until the
+  cache is cleared), and the editor reloads them each time it opens.
+- The loaded version is shown at the bottom of the editor, to spot an old file
+  kept by the browser cache.
+
 ## 1.5.5 — 13 September 2026
 
 ### Fixes

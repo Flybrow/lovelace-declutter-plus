@@ -2,6 +2,21 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.5.6 — 13 septembre 2026
+
+### Corrections
+
+- Ajouter une pop-up Bubble Card à un template masquait toute la carte Declutter
+  Plus après enregistrement : une pop-up fermée masque le conteneur de carte le
+  plus proche, qui était la carte Declutter Plus elle-même. Chaque carte d'un
+  template a désormais son propre conteneur de carte Home Assistant (comme dans
+  une section) : la pop-up ne masque que sa case. Les conditions `visibility`
+  par carte fonctionnent aussi.
+- Les templates partagés sont toujours relus depuis le stockage (plus de template
+  périmé jusqu'au vidage du cache), et l'éditeur les recharge à chaque ouverture.
+- La version chargée est affichée en bas de l'éditeur, pour repérer un ancien
+  fichier gardé en cache par le navigateur.
+
 ## 1.5.5 — 13 septembre 2026
 
 ### Corrections

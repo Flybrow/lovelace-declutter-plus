@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.5.5";
+  const VERSION = "1.5.6";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -488,6 +488,20 @@
     return helpers.createCardElement(config);
   }
 
+  // Carte dans son propre conteneur hui-card, comme dans une section : les cartes
+  // qui masquent leur conteneur (pop-up Bubble Card fermée) ou les conditions de
+  // visibilité n'agissent que sur leur case, pas sur toute la carte Declutter Plus.
+  function createHuiCard(config, hass) {
+    if (!customElements.get("hui-card")) return helpers.createCardElement(config);
+    const el = document.createElement("hui-card");
+    el.layout = "grid";
+    el.preview = false;
+    if (hass) el.hass = hass;
+    el.config = config;
+    if (typeof el.load === "function") el.load();
+    return el;
+  }
+
   // ---------------------------------------------------------------------------
   // Popups natives de HA (même principe que Bubble Card)
   //
@@ -851,7 +865,8 @@
     subscribeLibrary(hass, entry);
     if (entry.promise && !force) return entry.promise;
     entry.promise = hass
-      .callWS({ type: "lovelace/config", url_path: path, force: !!force })
+      // toujours relire le stockage : pas de template périmé
+      .callWS({ type: "lovelace/config", url_path: path, force: true })
       .then(
         function (config) {
           entry.missing = false;
@@ -1296,7 +1311,9 @@
     ".dp-grid{display:grid;grid-template-columns:repeat(" + GRID_COLUMNS + ",minmax(0,1fr));" +
     "gap:var(--row-gap,8px) var(--column-gap,8px);align-items:start}" +
     ".dp-cell{position:relative;min-width:0;grid-column:span " + GRID_COLUMNS + "}" +
-    ".dp-cell>*{display:block}";
+    ".dp-cell>*{display:block}" +
+    // case masquée par sa carte (visibilité, pop-up fermée) : ne réserve pas de place
+    ".dp-cell:has(>hui-card[hidden]),.dp-cell:has(>hui-card[style*='display: none']){display:none}";
 
   // Largeur : grid_options de la carte, sinon getGridOptions() de la carte, sinon pleine largeur.
   function gridColumns(config, el) {
@@ -1362,8 +1379,9 @@
       this._config.cards.forEach((config, index) => {
         const cell = document.createElement("div");
         cell.className = "dp-cell";
-        const card = helpers.createCardElement(config);
+        const card = createHuiCard(config, this._hass);
         card.addEventListener("ll-rebuild", (ev) => {
+          if (card.localName === "hui-card") return;
           ev.stopPropagation();
           const fresh = helpers.createCardElement(config);
           if (this._hass) fresh.hass = this._hass;
@@ -1594,6 +1612,9 @@
     }
 
     _createChild(kind, config) {
+      if (kind === "card" && !this._editable() && !isStack(config) && config.type !== GRID_TYPE) {
+        return createHuiCard(config, this._hass);
+      }
       return createChild(kind, config);
     }
 
@@ -1869,6 +1890,7 @@
       background:var(--secondary-background-color); color:var(--secondary-text-color); }
     .badge.shared { background:var(--primary-color); color:var(--text-primary-color,#fff); }
     h4 { font-size:14px; font-weight:500; margin:20px 0 2px; }
+    .version { font-size:11px; color:var(--secondary-text-color); text-align:right; opacity:.7; margin-top:4px; }
     .chips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
     .chip { display:inline-flex; align-items:center; gap:4px; font-size:12px; padding:3px 4px 3px 10px; border-radius:14px;
       background:var(--secondary-background-color); }
@@ -1904,7 +1926,7 @@
       this._hass = hass;
       if (first) {
         loadHelpers().then(this._render.bind(this), function () {});
-        loadLibrary(hass, this._path()).then(this._render.bind(this));
+        loadLibrary(hass, this._path(), true).then(this._render.bind(this));
       } else if (resolveLang(hass) !== this._lastLang) {
         this._render();
         return;
@@ -2030,6 +2052,8 @@
       if (current) {
         root.appendChild(this._panel("panel-variables", t(lang, "panelVariables"), "mdi:variable", true, this._renderVariablesPanel(lang, current)));
       }
+      // version chargée : repère simple quand le navigateur garde un ancien fichier
+      root.appendChild(this._el("div", { class: "version", text: "Declutter Plus v" + VERSION }));
     }
 
     // --- Panneau Template : nom, description, stockage, galerie
