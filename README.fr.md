@@ -56,9 +56,11 @@ ressource `/local/declutter-plus.js` (type *Module JavaScript*).
 2. Dans l'aperçu à droite, cliquer **Ajouter une carte** et choisir une carte
    dans le sélecteur de Home Assistant, la configurer dans son éditeur habituel
    puis enregistrer.
-3. Le template est créé (son entité devient une variable) et sélectionné. De
-   retour dans l'éditeur Declutter Plus, régler à gauche son nom, son stockage
-   et ses variables.
+3. Le template est créé et sélectionné. De retour dans l'éditeur Declutter Plus,
+   régler à gauche son nom et son stockage.
+   Les variables sont facultatives : utiles seulement pour réutiliser le template
+   avec des valeurs différentes (par exemple une carte par pièce). Les ajouter
+   dans *Variables* avec **Rendre un réglage variable…**.
 4. Cliquer à nouveau **Ajouter une carte** pour ajouter d'autres cartes au
    template. Pour modifier une carte ensuite, utiliser son bouton d'édition dans
    l'aperçu : son éditeur s'ouvre (visuel ou code) et l'enregistrement met à

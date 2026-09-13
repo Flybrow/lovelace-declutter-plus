@@ -51,8 +51,11 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
 1. Edit a dashboard › *Add card* › **Declutter Plus**.
 2. In the preview on the right, click **Add card** and pick a card in Home
    Assistant's card picker, then configure it in its usual editor and save.
-3. The template is created (its entity becomes a variable) and selected. Back in
-   the Declutter Plus editor, set its name, storage and variables on the left.
+3. The template is created and selected. Back in the Declutter Plus editor, set
+   its name and storage on the left.
+   Variables are optional: only needed to reuse the template with different
+   values (for example one card per room). Add them in *Variables* with
+   **Make a setting variable…**.
 4. Click **Add card** again to add more cards to the template. To change a card
    later, use its edit button in the preview: its editor opens (visual or code)
    and saving updates the template.

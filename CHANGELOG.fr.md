@@ -2,6 +2,17 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.7.0 — 13 septembre 2026
+
+### Changements
+
+- **Plus de variables automatiques** : ajouter une carte, importer une section ou
+  coller une carte garde les valeurs telles quelles. Les variables sont
+  facultatives et se créent à la demande avec **Rendre un réglage variable…**.
+  Les variables existantes sont conservées ; les retirer avec ✕ si inutiles.
+- L'éditeur s'ouvre avec le panneau **Template** déplié et **Variables** replié,
+  et retient les panneaux ouverts ou fermés.
+
 ## 1.6.1 — 13 septembre 2026
 
 ### Corrections

@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.6.1";
+  const VERSION = "1.7.0";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -1196,8 +1196,8 @@
     const config = cleanCard(card);
     delete config.grid_options;
     delete config.visibility;
+    // aucune variable par défaut : on en crée avec « Rendre un réglage variable »
     const vars = [];
-    if (typeof config.entity === "string" && config.entity) vars.push({ name: "entity", path: ["entity"], label: "" });
     return {
       originalName: null,
       originScope: null,
@@ -1342,26 +1342,6 @@
     ed.card.type = GRID_TYPE;
     card.grid_options = Object.assign({}, card.grid_options, gridOptions);
     return true;
-  }
-
-  // Lie l'entité d'une carte ajoutée à une nouvelle variable (entity, entity_2…).
-  function bindCardEntity(ed, index) {
-    const base = isStack(ed.card) ? ["cards", index] : [];
-    const card = getPath(ed.card, base);
-    if (!isObject(card) || typeof card.entity !== "string" || !card.entity) return null;
-    const taken = ed.vars.map((v) => v.name).concat(Object.keys(ed.extraDefaults));
-    const name = suggestVarName(["entity"], taken);
-    ed.vars.push({ name: name, path: base.concat("entity"), label: "" });
-    return name;
-  }
-
-  function draftValuesFor(ed, names) {
-    const values = {};
-    ed.vars.forEach(function (v) {
-      const value = getPath(ed.card, v.path);
-      if (names.indexOf(v.name) !== -1 && value !== undefined) values[v.name] = value;
-    });
-    return values;
   }
 
   // Valeurs actuelles des variables liées (pour la carte qui vient de créer le template)
@@ -2104,13 +2084,21 @@
       return el;
     }
 
+    // état déplié retenu entre deux rendus (défaut : Template ouvert, Variables fermé)
     _panel(cls, title, icon, expanded, content) {
+      if (this._expanded && hasVar(this._expanded, cls)) expanded = this._expanded[cls];
+      const remember = (open) => {
+        this._expanded = Object.assign({}, this._expanded, { [cls]: open });
+      };
       let panel;
       if (customElements.get("ha-expansion-panel")) {
         panel = document.createElement("ha-expansion-panel");
         panel.outlined = true;
         panel.header = title;
         panel.expanded = !!expanded;
+        panel.addEventListener("expanded-changed", function (ev) {
+          if (ev.target === panel && ev.detail) remember(!!ev.detail.expanded);
+        });
         if (customElements.get("ha-icon")) {
           const ic = document.createElement("ha-icon");
           ic.setAttribute("slot", "leading-icon");
@@ -2120,6 +2108,9 @@
       } else {
         panel = document.createElement("details");
         panel.open = !!expanded;
+        panel.addEventListener("toggle", function () {
+          remember(panel.open);
+        });
         panel.appendChild(this._el("summary", { text: title }));
       }
       panel.className = "panel " + cls;
@@ -2150,9 +2141,9 @@
         root.appendChild(this._el("div", { class: "notice " + (this._message.type || ""), text: this._message.text }));
       }
       const current = this._current();
-      root.appendChild(this._panel("panel-template", t(lang, "panelTemplate"), "mdi:view-grid-outline", !current, this._renderTemplatePanel(lang, current)));
+      root.appendChild(this._panel("panel-template", t(lang, "panelTemplate"), "mdi:view-grid-outline", true, this._renderTemplatePanel(lang, current)));
       if (current) {
-        root.appendChild(this._panel("panel-variables", t(lang, "panelVariables"), "mdi:variable", true, this._renderVariablesPanel(lang, current)));
+        root.appendChild(this._panel("panel-variables", t(lang, "panelVariables"), "mdi:variable", false, this._renderVariablesPanel(lang, current)));
       }
       // version chargée : repère simple quand le navigateur garde un ancien fichier
       root.appendChild(this._el("div", { class: "version", text: "Declutter Plus v" + VERSION }));
@@ -2616,11 +2607,8 @@
           onSave: function (card) {
             const index = draftCards(ed).length;
             insertDraftCard(ed, index, card);
-            const varName = bindCardEntity(ed, index);
             return editor._writeDraft(ed).then(function () {
-              const next = Object.assign({}, ownConfig);
-              if (varName) next.variables = Object.assign(listToObject(ownConfig.variables), draftValuesFor(ed, [varName]));
-              return next;
+              return Object.assign({}, ownConfig);
             }, function (err) {
               throw new Error(errorText(lang, err));
             });
@@ -2799,29 +2787,24 @@
       const current = this._current();
       const cards = section.cards.map(clone);
       let ed;
-      let names = [];
       const isNew = !current || normalizeTemplate(current.found.raw).kind !== "card";
       if (!isNew) {
         ed = draftFromTemplate(current.name, current.found, this._config.variables);
       } else {
         const base = String(section.title).toLowerCase().replace(/[^a-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "") || "section";
         ed = draftFromCard(cards.shift(), uniqueName(base, this._templates()), this._defaultScope());
-        names = ed.vars.map((v) => v.name);
         // une section se copie en grille, même avec une seule carte
         if (cards.length) ensureStack(ed);
       }
       cards.forEach(function (card) {
         const index = draftCards(ed).length;
         insertDraftCard(ed, index, card);
-        const name = bindCardEntity(ed, index);
-        if (name) names.push(name);
       });
       this._run(this._writeDraft(ed), tSub(lang, "imported", { count: section.cards.length }))
         .then(() => {
           const next = Object.assign({}, this._config, { template: ed.name });
           delete next.paste;
-          next.variables = Object.assign(isNew ? {} : listToObject(this._config.variables), draftValuesFor(ed, names));
-          if (!Object.keys(next.variables).length) delete next.variables;
+          if (isNew) delete next.variables;
           this._changed(next);
           this._render();
         })

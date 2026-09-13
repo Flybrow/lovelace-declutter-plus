@@ -2,6 +2,17 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.7.0 — 13 September 2026
+
+### Changes
+
+- **No automatic variables anymore**: adding a card, importing a section or
+  pasting a card keeps values as they are. Variables are optional and only
+  created on demand with **Make a setting variable…**. Existing variables are
+  kept; remove them with ✕ if you do not need them.
+- The editor opens with the **Template** panel expanded and **Variables**
+  collapsed, and remembers which panels you open or close.
+
 ## 1.6.1 — 13 September 2026
 
 ### Fixes
