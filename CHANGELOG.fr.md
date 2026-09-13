@@ -2,6 +2,14 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.5.0 — 13 septembre 2026
+
+- Le dashboard de stockage partagé affiche désormais chaque template partagé :
+  une section par template avec son nom, sa description et la carte rendue avec
+  ses valeurs par défaut. Il est reconstruit à chaque modification des templates,
+  et mis à jour quand un administrateur ouvre Declutter Plus (les dashboards
+  existants vides se remplissent).
+
 ## 1.4.0 — 13 septembre 2026
 
 ### Nouveautés

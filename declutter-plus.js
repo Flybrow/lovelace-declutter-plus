@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.4.0";
+  const VERSION = "1.5.0";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -61,7 +61,9 @@
       storageLocal: "Saved in this dashboard's configuration, usable on this dashboard only.",
       storageShared: "Saved in a hidden dashboard named \"{title}\", used only as storage, usable on every dashboard.",
       sharedEnable: "Enable shared storage",
-      sharedNote: "This hidden dashboard only stores the shared **Declutter Plus** templates. You do not need to open it: manage templates from the Declutter Plus card editor.",
+      sharedNote: "This hidden dashboard stores the shared **Declutter Plus** templates and shows each of them below, with its default values. It is rebuilt automatically: manage templates from the Declutter Plus card editor.",
+      sharedEmpty: "No shared template yet.",
+      sharedOtherKind: "{kind} template: no preview.",
       noVariables: "This template has no variables.",
       defaultValue: "Default: {value}",
       templateVars: "Variable settings of the template",
@@ -110,7 +112,9 @@
       storageLocal: "Enregistré dans la configuration de ce dashboard, utilisable uniquement sur ce dashboard.",
       storageShared: "Enregistré dans un dashboard caché nommé « {title} », qui sert uniquement de stockage, utilisable sur tous les dashboards.",
       sharedEnable: "Activer le stockage partagé",
-      sharedNote: "Ce dashboard caché sert uniquement à stocker les templates **Declutter Plus** partagés. Inutile de l'ouvrir : gérez les templates depuis l'éditeur de la carte Declutter Plus.",
+      sharedNote: "Ce dashboard caché stocke les templates **Declutter Plus** partagés et affiche chacun d'eux ci-dessous, avec ses valeurs par défaut. Il est reconstruit automatiquement : gérez les templates depuis l'éditeur de la carte Declutter Plus.",
+      sharedEmpty: "Aucun template partagé pour l'instant.",
+      sharedOtherKind: "Template {kind} : pas d'aperçu.",
       noVariables: "Ce template n'a pas de variable.",
       defaultValue: "Défaut : {value}",
       templateVars: "Réglages variables du template",
@@ -730,6 +734,53 @@
     });
   }
 
+  // Vues du dashboard de stockage : une section par template partagé (titre +
+  // carte avec ses valeurs par défaut). Entièrement générées par le plugin.
+  function buildSharedViews(templates, path, lang) {
+    const sections = [{ type: "grid", cards: [{ type: "markdown", content: t(lang, "sharedNote") }] }];
+    const names = Object.keys(templates).sort();
+    if (!names.length) {
+      sections[0].cards.push({ type: "markdown", content: t(lang, "sharedEmpty") });
+    }
+    names.forEach(function (name) {
+      const tpl = normalizeTemplate(templates[name]);
+      const cards = [{ type: "heading", heading: name, heading_style: "title" }];
+      if (tpl && tpl.description) cards.push({ type: "markdown", content: tpl.description });
+      if (tpl && tpl.kind === "card") {
+        const card = { type: "custom:" + CARD_TAG, template: name };
+        if (path !== SHARED_DASHBOARD) card.library = path;
+        cards.push(card);
+      } else {
+        cards.push({ type: "markdown", content: tSub(lang, "sharedOtherKind", { kind: tpl ? tpl.kind : "?" }) });
+      }
+      sections.push({ type: "grid", cards: cards });
+    });
+    return [{ title: SHARED_TITLE, path: "templates", type: "sections", max_columns: 4, sections: sections }];
+  }
+
+  function withSharedViews(config, path, lang) {
+    const next = Object.assign({}, config);
+    next.views = buildSharedViews(listToObject(next[TEMPLATES_KEY]), path, lang);
+    return next;
+  }
+
+  // Met à jour les vues si elles ne correspondent plus aux templates (administrateur).
+  function syncSharedViews(hass, path, config) {
+    if (!isAdmin(hass) || !isObject(config)) return;
+    const next = withSharedViews(config, path, resolveLang(hass));
+    // les textes dépendent de la langue : les ignorer évite que deux
+    // administrateurs de langues différentes réécrivent le dashboard en boucle
+    const shape = function (views) {
+      return JSON.stringify(views, function (key, value) {
+        return key === "content" ? undefined : value;
+      });
+    };
+    if (shape(next.views) === shape(config.views)) return;
+    hass.callWS({ type: "lovelace/config/save", url_path: path, config: next }).catch(function (e) {
+      console.warn("[declutter-plus] shared storage view sync failed", e);
+    });
+  }
+
   function loadLibrary(hass, path, force) {
     const entry = libraryEntry(path);
     if (!hass || !hass.callWS) return Promise.resolve(entry);
@@ -742,6 +793,7 @@
           entry.missing = false;
           entry.error = null;
           entry.templates = listToObject(isObject(config) ? config[TEMPLATES_KEY] : null);
+          syncSharedViews(hass, path, config);
         },
         function (err) {
           entry.templates = {};
@@ -782,7 +834,7 @@
         const next = Object.assign({}, config);
         next[TEMPLATES_KEY] = listToObject(next[TEMPLATES_KEY]);
         mutate(next[TEMPLATES_KEY]);
-        return hass.callWS({ type: "lovelace/config/save", url_path: path, config: next });
+        return hass.callWS({ type: "lovelace/config/save", url_path: path, config: withSharedViews(next, path, resolveLang(hass)) });
       })
       .then(function () {
         return loadLibrary(hass, path, true);
@@ -797,8 +849,9 @@
       show_in_sidebar: false,
       require_admin: false
     };
-    const config = { views: [{ title: SHARED_TITLE, cards: [{ type: "markdown", content: t(lang, "sharedNote") }] }] };
+    const config = {};
     config[TEMPLATES_KEY] = {};
+    config.views = buildSharedViews({}, path, lang);
     return hass
       .callWS(Object.assign({ type: "lovelace/dashboards/create", mode: "storage" }, base))
       .catch(function () {

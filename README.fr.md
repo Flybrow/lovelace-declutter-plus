@@ -70,8 +70,10 @@ où vous voulez.
 | **Ce dashboard** | la configuration du dashboard courant                                            | ce dashboard seulement |
 | **Partagé**      | un dashboard caché *Declutter Plus – Templates*, qui sert uniquement de stockage | tous les dashboards    |
 
-- Le stockage partagé s'active une fois depuis le panneau *Stockage des
-  templates* (administrateur). Inutile d'ouvrir ce dashboard.
+- Le stockage partagé s'active depuis le panneau *Template* (administrateur).
+- Le dashboard de stockage affiche chaque template partagé (titre, description
+  et carte avec ses valeurs par défaut). Il est reconstruit automatiquement : ne
+  pas le modifier à la main.
 - Si les deux contiennent un template du même nom, le local est prioritaire.
 - Changer le stockage d'un template existant le déplace ; changer son nom le renomme.
 - Un dashboard en mode YAML ne peut pas être modifié depuis l'interface :

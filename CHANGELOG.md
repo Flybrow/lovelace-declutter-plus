@@ -2,6 +2,13 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.5.0 — 13 September 2026
+
+- The shared storage dashboard now shows every shared template: one section per
+  template with its name, description and the card rendered with its default
+  values. It is rebuilt whenever templates change, and brought up to date when
+  an administrator opens Declutter Plus (existing empty dashboards get filled).
+
 ## 1.4.0 — 13 September 2026
 
 ### New

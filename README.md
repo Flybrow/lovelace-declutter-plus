@@ -63,8 +63,10 @@ A template is a reusable card model. Cards themselves go wherever you want.
 | **This dashboard** | the current dashboard's configuration                                 | this dashboard only |
 | **Shared**         | a hidden dashboard *Declutter Plus – Templates*, used only as storage | every dashboard     |
 
-- Shared storage is enabled once from the *Template storage* panel
-  (administrators). You never need to open that dashboard.
+- Shared storage can be enabled from the *Template* panel (administrators).
+- The storage dashboard shows every shared template (title, description and the
+  card with its default values). It is rebuilt automatically: do not edit it by
+  hand.
 - If both contain a template with the same name, the local one wins.
 - Changing the storage of an existing template moves it; renaming renames it.
 - Dashboards in YAML mode cannot be modified from the UI: use shared storage.
