@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.5.0";
+  const VERSION = "1.5.1";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -83,7 +83,7 @@
       copied: "Card copied.",
       invalidName: "The name may only contain letters, digits, _ and -.",
       adminOnly: "Only administrators can edit templates.",
-      dialogUnavailable: "The Home Assistant card editor is not available here. Open this card from the dashboard editor.",
+      dialogUnavailable: "Declutter Plus: the Home Assistant card editor could not be opened ({reason}).",
       dashboardUnavailable: "This dashboard cannot be modified from here (YAML mode?). Use shared storage.",
       error: "Error: {message}"
     },
@@ -134,7 +134,7 @@
       copied: "Carte copiée.",
       invalidName: "Le nom ne peut contenir que lettres, chiffres, _ et -.",
       adminOnly: "Seuls les administrateurs peuvent modifier les templates.",
-      dialogUnavailable: "L'éditeur de cartes de Home Assistant n'est pas disponible ici. Ouvrez cette carte depuis l'édition du dashboard.",
+      dialogUnavailable: "Declutter Plus : impossible d'ouvrir l'éditeur de cartes de Home Assistant ({reason}).",
       dashboardUnavailable: "Ce dashboard ne peut pas être modifié d'ici (mode YAML ?). Utilisez le stockage partagé.",
       error: "Erreur : {message}"
     }
@@ -560,11 +560,21 @@
       });
   }
 
+  // Toast natif de HA (visible aussi sur mobile, où le panneau peut être hors écran)
+  function showToast(message) {
+    try {
+      fireEvent(haHost() || window, "hass-notification", { message: message });
+    } catch (e) {}
+  }
+
   // opts : { hass, mode: "add" | "edit", card, ownConfig, onSave(card) -> Promise<nouvelle config> }
+  // Résout { ok, reason }.
   function openNativeCardDialog(opts) {
     const dialog = activeEditDialog();
     const host = haHost();
-    if (!dialog || !dialog._params || !host) return Promise.resolve(false);
+    if (!host) return Promise.resolve({ ok: false, reason: "no home-assistant" });
+    if (!dialog) return Promise.resolve({ ok: false, reason: "no hui-dialog-edit-card" });
+    if (!dialog._params) return Promise.resolve({ ok: false, reason: "no dialog params" });
 
     const parent = Object.assign({}, dialog._params);
     const originalRoot = clone(parent.cardConfig);
@@ -646,15 +656,25 @@
       }
     };
 
+    // enregistrement d'une carte par l'éditeur enfant
+    const saveCard = function (card) {
+      if (!isObject(card)) return Promise.resolve();
+      return Promise.resolve(opts.onSave(clone(card))).then(function (own) {
+        if (own) nextOwnConfig = own;
+      });
+    };
+
     const onShow = function (ev) {
       if (!ev.detail || ev.detail.dialogTag !== "hui-dialog-edit-card") return;
       ev.stopImmediatePropagation();
       ev.stopPropagation();
+      const params = Object.assign({}, ev.detail.dialogParams);
+      if (typeof params.saveCardConfig === "function") params.saveCardConfig = saveCard;
       if (opts.mode === "add") {
-        pendingChild = ev.detail.dialogParams;
+        pendingChild = params;
       } else {
         host.removeEventListener("show-dialog", onShow, true);
-        showChild(ev.detail.dialogParams);
+        showChild(params);
       }
     };
 
@@ -677,22 +697,48 @@
       });
     };
 
-    host.addEventListener("show-dialog", onShow, true);
-    if (opts.mode === "add") window.addEventListener("dialog-closed", onCreateClosed, true);
+    // Édition : l'éditeur enfant s'ouvre directement dans la boîte courante
+    // (paramètres actuels de HA : cardConfig + saveCardConfig), sans section fantôme.
+    if (opts.mode === "edit") {
+      const card = clone(opts.card);
+      showChild({
+        lovelaceConfig: parent.lovelaceConfig,
+        saveCardConfig: saveCard,
+        cardConfig: card,
+        sectionConfig: { type: "grid", cards: [card] }
+      });
+      return Promise.resolve({ ok: true });
+    }
 
-    return createProxySection(opts.hass, opts.mode === "add" ? [] : [clone(opts.card)], saveConfig).then(function (section) {
-      if (!section) {
-        cleanup();
-        return false;
+    // Ajout : sélecteur natif via une section fantôme (qui sait le charger)
+    host.addEventListener("show-dialog", onShow, true);
+    window.addEventListener("dialog-closed", onCreateClosed, true);
+    return createProxySection(opts.hass, [], saveConfig).then(function (section) {
+      if (section) {
+        section._layoutElement.dispatchEvent(new CustomEvent("ll-create-card", { bubbles: true, composed: true }));
+        setTimeout(function () {
+          section.remove();
+        }, 0);
+        return { ok: true };
       }
-      const eventName = opts.mode === "add" ? "ll-create-card" : "ll-edit-card";
-      section._layoutElement.dispatchEvent(
-        new CustomEvent(eventName, { bubbles: true, composed: true, detail: opts.mode === "add" ? undefined : { path: [0, 0, 0] } })
-      );
-      setTimeout(function () {
-        section.remove();
-      }, 0);
-      return true;
+      // repli : sélecteur déjà chargé, appelé directement avec retour de la carte
+      if (customElements.get("hui-dialog-create-card")) {
+        fireEvent(host, "show-dialog", {
+          dialogTag: "hui-dialog-create-card",
+          dialogImport: function () {
+            return Promise.resolve();
+          },
+          dialogParams: {
+            lovelaceConfig: parent.lovelaceConfig,
+            saveConfig: function () {},
+            path: [0, 0],
+            saveCard: saveCard
+          }
+        });
+        return { ok: true };
+      }
+      cleanup();
+      return { ok: false, reason: customElements.get("hui-section") ? "proxy section failed" : "hui-section not loaded" };
     });
   }
 
@@ -1323,6 +1369,7 @@
     const editors = previewBus.editors;
     const editor = editors.length ? editors[editors.length - 1] : null;
     if (editor) editor._previewAction(action, payload);
+    else showToast(tSub(resolveLang(null), "dialogUnavailable", { reason: "no Declutter Plus editor" }));
   }
 
   // ---------------------------------------------------------------------------
@@ -1458,6 +1505,13 @@
 
     _build() {
       if (!this._config) return;
+      if (this.isConnected) {
+        const inEditor = this._detectEditor();
+        if (inEditor !== this._inEditor) {
+          this._inEditor = inEditor;
+          this._signature = null;
+        }
+      }
       const entry = this._entry();
       if (!helpers || !entry.loaded) {
         // Création asynchrone : on redemandera une reconstruction au parent pour
@@ -2374,8 +2428,12 @@
       else if (action === "resize") this._resizeCard(index, payload.gridOptions);
     }
 
-    _dialogFailed(opened) {
-      if (opened === false) this._notify(t(this._lang(), "dialogUnavailable"), "err");
+    _dialogFailed(result) {
+      if (result && result.ok) return;
+      const message = tSub(this._lang(), "dialogUnavailable", { reason: (result && result.reason) || "?" });
+      console.warn("[declutter-plus] " + message);
+      showToast(message);
+      this._notify(message, "err");
     }
 
     _addCard() {

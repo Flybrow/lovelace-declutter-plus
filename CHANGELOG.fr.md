@@ -2,6 +2,19 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.5.1 — 13 septembre 2026
+
+### Corrections
+
+- Modifier une carte depuis l'aperçu pouvait ne rien faire (constaté sur
+  mobile). L'éditeur de carte s'ouvre désormais directement avec les paramètres
+  actuels de Home Assistant, sans la section fantôme dont il dépendait.
+- L'ajout d'une carte ouvre directement le sélecteur de cartes si la section
+  fantôme n'est pas disponible.
+- Si l'éditeur ne peut pas s'ouvrir, une notification Home Assistant en donne la
+  raison (le panneau de gauche peut être hors écran sur mobile).
+- La détection de l'aperçu de l'éditeur est recalculée à chaque rendu.
+
 ## 1.5.0 — 13 septembre 2026
 
 - Le dashboard de stockage partagé affiche désormais chaque template partagé :

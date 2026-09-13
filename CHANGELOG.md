@@ -2,6 +2,19 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.5.1 — 13 September 2026
+
+### Fixes
+
+- Editing a card from the preview could do nothing (reported on mobile). The
+  card editor is now opened directly with Home Assistant's current editor
+  parameters, without the hidden proxy section it depended on.
+- Adding a card falls back to opening the card picker directly when the proxy
+  section is unavailable.
+- When the editor cannot be opened, a Home Assistant notification now gives the
+  reason (the left panel may be off screen on mobile).
+- Detection of the editor preview is refreshed on every render.
+
 ## 1.5.0 — 13 September 2026
 
 - The shared storage dashboard now shows every shared template: one section per
