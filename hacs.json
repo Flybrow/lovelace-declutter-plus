@@ -1,0 +1,6 @@
+{
+  "name": "Declutter Plus",
+  "filename": "declutter-plus.js",
+  "render_readme": true,
+  "homeassistant": "2024.8.0"
+}

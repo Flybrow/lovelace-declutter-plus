@@ -1,0 +1,25 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Instructions locales (hors depot public)
+.github/copilot-instructions.md
+
+# Logs / divers
+*.log
+node_modules/
+.cache/
+tmp/
+
+# Fichiers de build (ce projet n'en a pas, par sécurité)
+dist/
+build/
+*.min.js
