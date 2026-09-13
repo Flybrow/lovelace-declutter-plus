@@ -2,6 +2,15 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.5.5 — 13 September 2026
+
+### Fixes
+
+- Templates stored as `vertical-stack` whose cards have a width
+  (`grid_options.columns`) are now always displayed on the grid, in the editor
+  and on dashboards, without having to edit them first. Stacks without any card
+  width (for example from decluttering-card) keep their stacked layout.
+
 ## 1.5.4 — 13 September 2026
 
 ### Fixes

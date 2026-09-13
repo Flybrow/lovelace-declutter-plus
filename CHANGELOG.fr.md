@@ -2,6 +2,15 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.5.5 — 13 septembre 2026
+
+### Corrections
+
+- Les templates stockés en `vertical-stack` dont des cartes ont une largeur
+  (`grid_options.columns`) s'affichent désormais toujours en grille, dans
+  l'éditeur comme sur les dashboards, sans devoir les modifier. Les piles sans
+  largeur de carte (par exemple issues de decluttering-card) restent empilées.
+
 ## 1.5.4 — 13 septembre 2026
 
 ### Corrections

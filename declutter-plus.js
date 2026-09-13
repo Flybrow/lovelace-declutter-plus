@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.5.4";
+  const VERSION = "1.5.5";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -1089,6 +1089,8 @@
       const field = tpl.fields[m[1]];
       vars.push({ name: m[1], path: leaf.path, label: (isObject(field) && field.label) || "", noDefault: !hasDefault });
     });
+    const asGridCard = asGrid(card);
+    if (asGridCard !== card) card.type = GRID_TYPE;
     return {
       originalName: name,
       originScope: found.scope,
@@ -1158,6 +1160,18 @@
 
   // Un template à plusieurs cartes est stocké en grille Declutter Plus (12 colonnes,
   // comme une section) ; les anciens vertical-stack restent lus comme des listes.
+  // Un vertical-stack dont une carte a une largeur réglée s'affiche en grille :
+  // l'utilisateur veut des cartes côte à côte (templates créés en 1.3.0).
+  function asGrid(config) {
+    if (isObject(config) && config.type === "vertical-stack" && Array.isArray(config.cards)) {
+      const sized = config.cards.some(function (card) {
+        return isObject(card) && isObject(card.grid_options) && card.grid_options.columns !== undefined;
+      });
+      if (sized) return Object.assign({}, config, { type: GRID_TYPE });
+    }
+    return config;
+  }
+
   function isStack(card) {
     return isObject(card) && (card.type === GRID_TYPE || card.type === "vertical-stack") && Array.isArray(card.cards);
   }
@@ -1572,7 +1586,9 @@
         this._showError(tSub(lang, "kindMismatch", { name: name, kind: tpl.kind }));
         return;
       }
-      this._show(renderTemplate(tpl, listToObject(this._config.variables)), lang, tpl.kind === "card" ? "add" : null);
+      const rendered = renderTemplate(tpl, listToObject(this._config.variables));
+      if (tpl.kind === "card") rendered.config = asGrid(rendered.config);
+      this._show(rendered, lang, tpl.kind === "card" ? "add" : null);
       if (this._deferred && this.isConnected && tpl.kind === "card" && !this._inEditor) fireEvent(this, "ll-rebuild", {});
       this._deferred = false;
     }
