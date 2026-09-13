@@ -17,6 +17,10 @@ moderne et graphique de [decluttering-card](https://github.com/custom-cards/decl
   sélecteur de cartes de Home Assistant, et la barre d'édition de la carte ouvre
   son propre éditeur (visuel ou code) — n'importe quelle carte, y compris les
   cartes personnalisées comme Bubble Card.
+- **Plusieurs cartes par template** : **Ajouter une carte** reste sous les
+  cartes ; chaque carte a sa barre d'édition (modifier, dupliquer, copier,
+  supprimer). Un template à plusieurs cartes est stocké en `vertical-stack`
+  natif.
 - **Galerie de templates** avec miniatures en direct, formulaire des variables
   avec vrais sélecteurs (entité, icône, pièce…).
 - **Copier-coller de cartes natives** : *Copier* une carte depuis son menu, puis
@@ -48,7 +52,8 @@ ressource `/local/declutter-plus.js` (type *Module JavaScript*).
 3. Le template est créé (son entité devient une variable) et sélectionné. De
    retour dans l'éditeur Declutter Plus, régler à gauche son nom, son stockage
    et ses variables.
-4. Pour modifier la carte ensuite, utiliser le bouton d'édition de la carte dans
+4. Cliquer à nouveau **Ajouter une carte** pour ajouter d'autres cartes au
+   template. Pour modifier une carte ensuite, utiliser son bouton d'édition dans
    l'aperçu : son éditeur s'ouvre (visuel ou code) et l'enregistrement met à
    jour le template.
 5. Le réutiliser : ajouter une autre carte Declutter Plus et choisir le template

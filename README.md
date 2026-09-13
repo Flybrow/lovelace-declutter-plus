@@ -16,6 +16,9 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
   preview on the right: **Add card** opens Home Assistant's card picker pop-up,
   and the card's edit toolbar opens its own editor (visual or code) — any card,
   including custom cards such as Bubble Card.
+- **Several cards per template**: **Add card** stays under the cards; each card
+  has its own edit toolbar (edit, duplicate, copy, delete). Multi-card templates
+  are stored as a native `vertical-stack`.
 - **Template gallery** with live thumbnails, variable form with real pickers
   (entity, icon, area…).
 - **Copy & paste native cards**: *Copy* any card from its menu, then pick
@@ -44,8 +47,9 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
    Assistant's card picker, then configure it in its usual editor and save.
 3. The template is created (its entity becomes a variable) and selected. Back in
    the Declutter Plus editor, set its name, storage and variables on the left.
-4. To change the card later, use the edit button on the card in the preview:
-   its editor opens (visual or code) and saving updates the template.
+4. Click **Add card** again to add more cards to the template. To change a card
+   later, use its edit button in the preview: its editor opens (visual or code)
+   and saving updates the template.
 5. Reuse it: add another Declutter Plus card and pick the template in the
    gallery.
 

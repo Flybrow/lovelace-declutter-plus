@@ -2,6 +2,27 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.3.0 — 13 September 2026
+
+- **Several cards per template**: **Add card** now stays under the cards in the
+  preview and adds a card to the displayed template. Each card has its own edit
+  toolbar: edit, duplicate, copy, delete.
+- Multi-card templates are stored as a native `vertical-stack` (still
+  decluttering-card compatible); back to a single card, the stack is removed.
+- The entity of each added card becomes a new variable (`entity_2`, `entity_3`…).
+- Deleting the last card deletes the template.
+- Clearer confirmations: deleting a template, or removing a card from it, says
+  it is a Declutter Plus template, where it is stored, and how many Declutter
+  Plus cards use it across all dashboards, since they are affected too.
+
+### Fixes
+
+- A deleted template could stay in the gallery when another copy with the same
+  name existed (shared copy and original decluttering-card template): deleting
+  now removes the name from every storage.
+- Moving a template now fails with an error, instead of leaving a duplicate,
+  when its previous copy cannot be removed from the dashboard.
+
 ## 1.2.0 — 13 September 2026
 
 ### Editor redesigned, Bubble Card style
