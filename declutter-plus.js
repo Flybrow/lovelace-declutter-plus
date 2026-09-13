@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.5.2";
+  const VERSION = "1.5.3";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -33,6 +33,7 @@
   const PREVIEW_LIMIT = 60;
   const DOM_GUARD = 20000;
   const DIRTY_FRAMES = 10;
+  const CLOSE_TIMEOUT_MS = 1500;
   const FALLBACK_LANG = "en";
 
   const STRINGS = {
@@ -626,6 +627,23 @@
       }
     };
 
+    // HA ferme en deux temps (animation, puis paramètres effacés et
+    // « dialog-closed ») : rouvrir avant la fin effacerait la popup parente.
+    const reopenAfterClosed = function () {
+      let fired = false;
+      const finish = function () {
+        if (fired) return;
+        fired = true;
+        window.removeEventListener("dialog-closed", onClosed, true);
+        setTimeout(reopenParent, 0);
+      };
+      const onClosed = function (ev) {
+        if (ev.detail && ev.detail.dialog === "hui-dialog-edit-card") finish();
+      };
+      window.addEventListener("dialog-closed", onClosed, true);
+      setTimeout(finish, CLOSE_TIMEOUT_MS);
+    };
+
     const bridgeClose = function () {
       const hadOwn = Object.prototype.hasOwnProperty.call(dialog, "closeDialog");
       const original = dialog.closeDialog;
@@ -633,7 +651,7 @@
         restore();
         const result = typeof original === "function" ? original.apply(dialog, arguments) : true;
         Promise.resolve(result).then(function (closed) {
-          if (closed !== false) setTimeout(reopenParent, 0);
+          if (closed !== false) reopenAfterClosed();
         });
         return result;
       };

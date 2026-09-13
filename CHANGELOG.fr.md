@@ -2,6 +2,14 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.5.3 — 13 septembre 2026
+
+### Corrections
+
+- Régression de la 1.5.1 : enregistrer, fermer ou annuler l'éditeur d'une carte
+  fermait aussi l'éditeur Declutter Plus derrière. Il n'est désormais rouvert
+  qu'une fois l'éditeur de carte complètement fermé par Home Assistant.
+
 ## 1.5.2 — 13 septembre 2026
 
 ### Corrections

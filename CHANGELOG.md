@@ -2,6 +2,14 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.5.3 — 13 September 2026
+
+### Fixes
+
+- Regression in 1.5.1: saving, closing or cancelling a card's editor also closed
+  the Declutter Plus editor behind it. It is now reopened only once Home
+  Assistant has fully closed the card editor.
+
 ## 1.5.2 — 13 September 2026
 
 ### Fixes
