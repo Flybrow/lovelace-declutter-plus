@@ -2,6 +2,29 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 1.1.0 — 13 September 2026
+
+### New
+
+- **Add a card** under the preview now opens Home Assistant's **card picker**,
+  then the chosen card's **own visual editor**, with the live preview on the
+  right. Choose which settings become variables (the entity is suggested
+  automatically).
+- **Storage per template**: *This dashboard* or *Shared* with every dashboard.
+  Local templates win over shared ones with the same name; changing the storage
+  moves the template.
+
+### Changes
+
+- "Library" renamed **Template storage**, with an explanation in the editor. The
+  hidden storage dashboard is now titled *Declutter Plus – Templates*.
+- Shared storage is optional: templates can be created without it.
+
+### Fixes
+
+- The editor did not see the current dashboard (local decluttering-card
+  templates and the "copy a card of this dashboard" list were empty).
+
 ## 1.0.0 — 13 September 2026
 
 First release.

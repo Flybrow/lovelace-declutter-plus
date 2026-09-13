@@ -7,13 +7,16 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
 
 ![Declutter Plus card editor](https://raw.githubusercontent.com/Flybrow/lovelace-declutter-plus/main/assets/editor.png)
 
-- **Shared library**: templates live in one hidden dashboard and are available
-  on **every** dashboard.
+- **Place cards anywhere**: a Declutter Plus card only holds a template name and
+  its variable values.
+- **Two storage options per template**: *this dashboard* or *shared* with every
+  dashboard (see [Template storage](#template-storage)).
 - **Visual editor**: options in collapsible panels on the left, Home Assistant's
-  live preview on the right — including the template you are editing — with an
-  **Add a card** button under the preview.
+  live preview on the right. **Add a card** opens Home Assistant's own card
+  picker, then the card's own visual editor; pick which settings become
+  variables.
 - **Template gallery** with live thumbnails, variable form with real pickers
-  (entity, icon, area…), YAML template editor.
+  (entity, icon, area…).
 - **Copy & paste native cards**: *Copy* any card from its menu, then pick
   **“Declutter Plus: paste copied card”** in *Add card* — it becomes a template.
   You can also start from any card of the current dashboard.
@@ -36,10 +39,28 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
 ## Quick start
 
 1. Edit a dashboard › *Add card* › **Declutter Plus**.
-2. *Library* panel › **Create library** (administrators, once).
-3. Click **Add a card** under the preview: **New template**, **From copied card**
-   or **From a card of this dashboard**, then **Save to library**.
-4. Pick the template in the *Template* panel and fill in its *Variables*.
+2. Click **Add a card** under the preview and pick a card (or paste a copied
+   card, or copy one from this dashboard). Configure it with its usual editor.
+3. The entity is made variable automatically; use **Make a setting variable…**
+   for others (name, icon, color…).
+4. Choose where to save it (*This dashboard* or *Shared*) and **Save template**.
+5. Reuse it: add another Declutter Plus card, pick the template in the gallery
+   and fill in its variables.
+
+## Template storage
+
+A template is a reusable card model. Cards themselves go wherever you want.
+
+| Storage            | Where it is saved                                                     | Usable on           |
+| ------------------ | --------------------------------------------------------------------- | ------------------- |
+| **This dashboard** | the current dashboard's configuration                                 | this dashboard only |
+| **Shared**         | a hidden dashboard *Declutter Plus – Templates*, used only as storage | every dashboard     |
+
+- Shared storage is enabled once from the *Template storage* panel
+  (administrators). You never need to open that dashboard.
+- If both contain a template with the same name, the local one wins.
+- Changing the storage of an existing template moves it.
+- Dashboards in YAML mode cannot be modified from the UI: use shared storage.
 
 ## Card options
 
@@ -47,7 +68,7 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
 | ----------- | -------------- | ---------------- | -------------------------------------------------------- |
 | `template`  | string         | —                | Template name                                            |
 | `variables` | object or list | `{}`             | Variable values (list form is decluttering-compatible)   |
-| `library`   | string         | `declutter-plus` | URL path of the library dashboard                        |
+| `library`   | string         | `declutter-plus` | URL path of the shared storage dashboard                 |
 | `paste`     | card config    | —                | Set by the paste entry, removed once saved as a template |
 
 ```yaml
@@ -63,7 +84,7 @@ Also available: `custom:declutter-plus-element` (picture-elements) and
 
 ## Template format
 
-Templates are stored in the library dashboard under `declutter_plus_templates`:
+Templates are stored under `declutter_plus_templates`, in the current dashboard or in the storage dashboard:
 
 ```yaml
 declutter_plus_templates:
@@ -100,11 +121,10 @@ declutter_plus_templates:
 
 Replace `custom:decluttering-card` with `custom:declutter-plus-card`: the
 dashboard's existing `decluttering_templates` keep working (marked *local*).
-Use **Import … decluttering-card template(s)** to move them to the shared library.
+Edit and save one to convert it, or use **Move … decluttering-card template(s) to
+shared storage**.
 
 ## Notes
 
-- Editing the library requires an administrator; every user can read it.
-- The library dashboard is hidden from the sidebar and can be opened from the
-  *Library* panel.
+- Editing templates requires an administrator; every user can read them.
 - Put `visibility` on the Declutter Plus card itself (handled natively).

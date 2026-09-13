@@ -2,6 +2,29 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 1.1.0 — 13 septembre 2026
+
+### Nouveautés
+
+- **Ajouter une carte** sous l'aperçu ouvre désormais le **sélecteur de cartes**
+  de Home Assistant, puis **l'éditeur visuel de la carte choisie**, avec
+  l'aperçu en direct à droite. On choisit quels réglages deviennent des
+  variables (l'entité est proposée automatiquement).
+- **Stockage par template** : *Ce dashboard* ou *Partagé* avec tous les
+  dashboards. Le local est prioritaire à nom égal ; changer le stockage déplace
+  le template.
+
+### Changements
+
+- « Bibliothèque » renommée **Stockage des templates**, avec une explication dans
+  l'éditeur. Le dashboard caché de stockage s'intitule *Declutter Plus – Templates*.
+- Le stockage partagé devient facultatif : on peut créer des templates sans lui.
+
+### Corrections
+
+- L'éditeur ne voyait pas le dashboard courant (templates decluttering-card
+  locaux et liste « copier une carte de ce dashboard » vides).
+
 ## 1.0.0 — 13 septembre 2026
 
 Première version.
