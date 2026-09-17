@@ -93,8 +93,10 @@
       noVariablesCard: "This template has no variables. Add some from \"Manage templates\".",
       changeTemplate: "Change template",
       confirmRename: "Rename template \"{old}\" to \"{name}\"? {usage}\nOther cards using the old name will show \"Template not found\" until the template is chosen again.",
-      retiredTitle: "Declutter Plus – old storage (can be deleted)",
-      retiredNote: "Declutter Plus templates are now stored in Home Assistant's system data. This dashboard is no longer used: you can delete it in Settings › Dashboards.",
+      legacyFound: "{count} shared template(s) are still in the old storage dashboard (Declutter Plus 1.x). They keep working there.",
+      legacyCopyHelp: "You can copy them to Home Assistant's system data, the new storage: no hidden dashboard to maintain, updated live, included in backups. The old dashboard is left untouched and stays usable.",
+      legacyCopy: "Copy to the new storage",
+      legacyCopied: "{count} template(s) copied to the new storage. The old storage dashboard is unchanged; delete it in Settings › Dashboards only when you no longer need it.",
       popupNoHash: "Pop-up without hash",
       backupFound: "No shared template found, but a backup of {count} template(s) from {date} exists.",
       backupRestore: "Restore templates",
@@ -190,8 +192,10 @@
       noVariablesCard: "Ce template n'a pas de variable. Ajoutez-en depuis « Gérer les templates ».",
       changeTemplate: "Changer de template",
       confirmRename: "Renommer le template « {old} » en « {name} » ? {usage}\nLes autres cartes qui utilisent l'ancien nom afficheront « Template introuvable » jusqu'à ce que le template soit à nouveau choisi.",
-      retiredTitle: "Declutter Plus – ancien stockage (peut être supprimé)",
-      retiredNote: "Les templates Declutter Plus sont désormais stockés dans les données système de Home Assistant. Ce dashboard n'est plus utilisé : vous pouvez le supprimer dans Paramètres › Tableaux de bord.",
+      legacyFound: "{count} template(s) partagé(s) sont encore dans l'ancien dashboard de stockage (Declutter Plus 1.x). Ils continuent d'y fonctionner.",
+      legacyCopyHelp: "Vous pouvez les copier dans les données système de Home Assistant, le nouveau stockage : plus de dashboard caché à maintenir, mise à jour en direct, inclus dans les sauvegardes. L'ancien dashboard n'est pas modifié et reste utilisable.",
+      legacyCopy: "Copier vers le nouveau stockage",
+      legacyCopied: "{count} template(s) copié(s) vers le nouveau stockage. L'ancien dashboard de stockage n'a pas changé ; ne le supprimez dans Paramètres › Tableaux de bord que lorsque vous n'en avez plus besoin.",
       popupNoHash: "Pop-up sans hash",
       backupFound: "Aucun template partagé trouvé, mais une sauvegarde de {count} template(s) du {date} existe.",
       backupRestore: "Restaurer les templates",
@@ -938,6 +942,7 @@
       libraries[path] = {
         path: path,
         loaded: false,
+        legacy: false,
         error: null,
         templates: {},
         promise: null,
@@ -1053,13 +1058,14 @@
       .then(
         function (result) {
           entry.error = null;
+          entry.legacy = false;
           const templates = readSystemTemplates(result);
           if (templates) {
             entry.templates = templates;
             return null;
           }
           entry.templates = {};
-          return migrateDashboard(hass, entry);
+          return readLegacyDashboard(hass, entry);
         },
         function (err) {
           entry.templates = {};
@@ -1086,6 +1092,7 @@
           function (event) {
             const templates = readSystemTemplates(event);
             if (!templates) return;
+            entry.legacy = false;
             if (JSON.stringify(templates) === JSON.stringify(entry.templates)) return;
             entry.templates = templates;
             entry.loaded = true;
@@ -1101,20 +1108,17 @@
     }
   }
 
-  // Versions ≤ 1.8 : templates dans le dashboard caché « declutter-plus ». Ils
-  // sont copiés dans les données système, puis le dashboard est vidé et renommé.
-  function migrateDashboard(hass, entry) {
+  // Versions 1.x : templates dans le dashboard caché « declutter-plus ». Tant que
+  // l'utilisateur ne les a pas copiés vers les données système, ils y restent lus
+  // et modifiés ; ce dashboard n'est jamais vidé ni supprimé par le plugin.
+  function readLegacyDashboard(hass, entry) {
     return hass.callWS({ type: "lovelace/config", url_path: entry.path }).then(
       function (config) {
         const templates = listToObject(isObject(config) ? config[TEMPLATES_KEY] : null);
         if (!Object.keys(templates).length) return null;
-        entry.templates = templates; // lisibles tout de suite, même sans droits d'écriture
-        if (!isAdmin(hass)) return null;
-        return hass
-          .callWS({ type: "frontend/set_system_data", key: systemKey(entry.path), value: { version: 1, templates: templates } })
-          .then(function () {
-            return retireDashboard(hass, entry.path, config);
-          });
+        entry.templates = templates;
+        entry.legacy = true;
+        return null;
       },
       function () {
         return null;
@@ -1122,31 +1126,49 @@
     );
   }
 
-  function retireDashboard(hass, path, config) {
-    const lang = resolveLang(hass);
-    const next = Object.assign({}, config);
-    delete next[TEMPLATES_KEY];
-    next.views = [{ title: t(lang, "retiredTitle"), cards: [{ type: "markdown", content: t(lang, "retiredNote") }] }];
+  function saveLegacyDashboard(hass, path, mutate) {
+    return hass.callWS({ type: "lovelace/config", url_path: path, force: true }).then(function (config) {
+      const next = Object.assign({}, config);
+      next[TEMPLATES_KEY] = listToObject(next[TEMPLATES_KEY]);
+      mutate(next[TEMPLATES_KEY]);
+      return hass.callWS({ type: "lovelace/config/save", url_path: path, config: next }).then(function () {
+        return next[TEMPLATES_KEY];
+      });
+    });
+  }
+
+  // Copie (sans rien retirer) les templates de l'ancien dashboard vers les données système.
+  function copyLegacyToSystem(hass, path) {
     return hass
-      .callWS({ type: "lovelace/config/save", url_path: path, config: next })
-      .then(function () {
-        return hass.callWS({ type: "lovelace/dashboards/list" });
+      .callWS({ type: "lovelace/config", url_path: path, force: true })
+      .then(function (config) {
+        const templates = listToObject(isObject(config) ? config[TEMPLATES_KEY] : null);
+        return hass
+          .callWS({ type: "frontend/set_system_data", key: systemKey(path), value: { version: 1, templates: templates } })
+          .then(function () {
+            return Object.keys(templates).length;
+          });
       })
-      .then(function (list) {
-        const dash = (Array.isArray(list) ? list : []).find(function (d) {
-          return d.url_path === path;
+      .then(function (count) {
+        return loadLibrary(hass, path, true).then(function () {
+          return count;
         });
-        if (dash) return hass.callWS({ type: "lovelace/dashboards/update", dashboard_id: dash.id, title: t(lang, "retiredTitle") });
-        return null;
-      })
-      .catch(function (e) {
-        console.warn("[declutter-plus] old storage dashboard cleanup failed", e);
       });
   }
 
   // Relit les templates frais et n'écrit que la clé de la bibliothèque.
   function saveShared(hass, path, mutate) {
     const key = systemKey(path);
+    if (libraryEntry(path).legacy) {
+      // pas encore copiés : on continue d'écrire dans l'ancien dashboard
+      return saveLegacyDashboard(hass, path, mutate)
+        .then(function (templates) {
+          writeBackup(hass, path, templates, true);
+        })
+        .then(function () {
+          return loadLibrary(hass, path, true);
+        });
+    }
     return hass
       .callWS({ type: "frontend/get_system_data", key: key })
       .then(function (result) {
@@ -2187,7 +2209,7 @@
       this._usage = null; // utilisations par template (écran de gestion)
       // ne redessiner que si les templates ont vraiment changé
       this._onLibrary = (entry) => {
-        const signature = JSON.stringify([entry.error ? 1 : 0, entry.templates]);
+        const signature = JSON.stringify([entry.error ? 1 : 0, entry.legacy, entry.templates]);
         if (signature === this._librarySignature) return;
         this._librarySignature = signature;
         this._render();
@@ -2371,6 +2393,7 @@
           ["homePoint1", "homePoint2", "homePoint3", "homePoint4"].map((key) => this._el("li", { text: t(lang, key) }))
         )
       );
+      this._renderLegacy(box, lang);
       this._renderBackup(box, lang);
 
       const admin = isAdmin(this._hass);
@@ -2579,6 +2602,7 @@
       box.appendChild(this._backLink(lang));
       box.appendChild(this._el("h3", { text: t(lang, "manageTitle") }));
       box.appendChild(this._el("div", { class: "help", text: t(lang, "manageHelp") }));
+      this._renderLegacy(box, lang);
       this._renderBackup(box, lang);
 
       if (this._usage === null) {
@@ -2713,10 +2737,28 @@
       return box;
     }
 
+    // Templates encore dans l'ancien dashboard : proposer une copie, jamais imposée
+    _renderLegacy(box, lang) {
+      const entry = this._entry();
+      if (!isAdmin(this._hass) || !entry.legacy) return;
+      const count = Object.keys(entry.templates).length;
+      box.appendChild(
+        this._el("div", { class: "box" }, [
+          this._el("div", { class: "help", text: tSub(lang, "legacyFound", { count: count }) }),
+          this._el("div", { class: "help", text: t(lang, "legacyCopyHelp") }),
+          this._link(t(lang, "legacyCopy"), () => {
+            this._run(copyLegacyToSystem(this._hass, entry.path), null)
+              .then(() => this._notify(tSub(lang, "legacyCopied", { count: count }), "ok"))
+              .catch(function () {});
+          })
+        ])
+      );
+    }
+
     // Stockage partagé vide mais sauvegarde disponible : proposer la restauration
     _renderBackup(box, lang) {
       const entry = this._entry();
-      if (!isAdmin(this._hass) || !entry.loaded || entry.error || Object.keys(entry.templates).length) return;
+      if (!isAdmin(this._hass) || !entry.loaded || entry.error || entry.legacy || Object.keys(entry.templates).length) return;
       if (this._backup === undefined) {
         this._backup = null;
         readBackup(this._hass, entry.path).then((backup) => {

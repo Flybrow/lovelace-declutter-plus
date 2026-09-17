@@ -145,11 +145,16 @@ changent.
 
 ### Mise à jour depuis la 1.x
 
-Les versions 1.x stockaient les templates partagés dans un dashboard caché. La
-première fois qu'un administrateur ouvre une page avec Declutter Plus 2.0, les
-templates sont copiés automatiquement dans les données système, et ce dashboard
-est vidé et renommé *Declutter Plus – ancien stockage (peut être supprimé)*.
-Vous pouvez ensuite le supprimer dans *Paramètres › Tableaux de bord*.
+Les versions 1.x stockaient les templates partagés dans un dashboard caché. Rien
+n'est converti automatiquement : ces templates continuent de fonctionner depuis
+ce dashboard (et restent modifiables) aussi longtemps que vous le souhaitez.
+
+Quand vous êtes prêt, l'écran d'accueil et *Gérer les templates* proposent
+**Copier vers le nouveau stockage**. Les templates sont copiés dans les données
+système de Home Assistant et l'ancien dashboard reste intact et utilisable.
+Declutter Plus 2.0 utilise ensuite le nouveau stockage ; ne supprimez l'ancien
+dashboard dans *Paramètres › Tableaux de bord* que lorsque vous n'en avez plus
+besoin.
 
 ## Options de la carte
 

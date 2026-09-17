@@ -11,11 +11,11 @@
   administrateurs, mises à jour en direct, incluses dans les sauvegardes Home
   Assistant) au lieu d'un dashboard caché : plus de dashboard à protéger, plus de
   vues à reconstruire, une seule lecture légère par chargement de page.
-- **Migration automatique** : la première fois qu'un administrateur ouvre une
-  page avec Declutter Plus 2.0, les templates de l'ancien dashboard caché sont
-  copiés ; ce dashboard est vidé et renommé *Declutter Plus – ancien stockage
-  (peut être supprimé)*. D'ici là, les autres utilisateurs continuent de lire
-  l'ancien dashboard.
+- **Copie facultative depuis la 1.x, jamais automatique** : les templates de
+  l'ancien dashboard caché continuent d'y fonctionner (lus et modifiés) aussi
+  longtemps que vous le souhaitez. Les écrans d'accueil et *Gérer les templates*
+  proposent **Copier vers le nouveau stockage** ; la copie laisse l'ancien
+  dashboard intact et utilisable.
 - L'option `library` désigne désormais une bibliothèque partagée séparée.
 
 ### Éditeur guidé

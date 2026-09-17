@@ -128,11 +128,15 @@ one card per room with only the entity and the name changing.
 
 ### Upgrading from 1.x
 
-Versions 1.x stored shared templates in a hidden dashboard. The first time an
-administrator opens a page with Declutter Plus 2.0, the templates are copied to
-the system data automatically, and that dashboard is emptied and renamed
-*Declutter Plus – old storage (can be deleted)*. You can then delete it in
-*Settings › Dashboards*.
+Versions 1.x stored shared templates in a hidden dashboard. Nothing is converted
+automatically: those templates keep working from that dashboard (they can still
+be edited) as long as you want.
+
+When you are ready, the home screen and *Manage templates* offer **Copy to the
+new storage**. It copies the templates to Home Assistant's system data and
+leaves the old dashboard untouched and usable. From then on, Declutter Plus 2.0
+uses the new storage; delete the old dashboard in *Settings › Dashboards* only
+when you no longer need it.
 
 ## Card options
 

@@ -10,10 +10,10 @@
   by every user, written by administrators, updated live, included in Home
   Assistant backups) instead of a hidden dashboard: no dashboard to protect,
   no views to rebuild, one light read per page load.
-- **Automatic migration**: the first time an administrator opens a page with
-  Declutter Plus 2.0, templates of the old hidden dashboard are copied; that
-  dashboard is emptied and renamed *Declutter Plus – old storage (can be
-  deleted)*. Until then, other users keep reading the old dashboard.
+- **Optional copy from 1.x, never automatic**: templates of the old hidden
+  dashboard keep working there (read and edited) as long as you want. The home
+  and *Manage templates* screens offer **Copy to the new storage**; the copy
+  leaves the old dashboard untouched and usable.
 - The `library` option now names a separate shared library.
 
 ### Guided editor
