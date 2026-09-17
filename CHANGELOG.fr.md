@@ -27,45 +27,49 @@
 - **Écran de création** : nom, description, stockage, et comment remplir le
   template (ajouter ou coller des cartes, importer une section avec ses
   conteneurs, modifier depuis n'importe quelle page où le template est utilisé).
+  Coller une carte copiée ouvre cet écran avec la carte comme première carte.
 - **Cette carte** : une carte existante n'affiche que le template qu'elle
-  utilise et ses propres valeurs de variables, avec **Changer de template** et
-  **Gérer les templates**, plus un petit bouton **Gérer mes templates** à côté du
-  nom du template.
+  utilise et ses propres valeurs de variables, avec un bouton **Gérer mes
+  templates** à côté du nom du template, et les liens **Changer de template** /
+  **Gérer les templates**.
 - **Gérer les templates** : tous les templates avec leur nombre de cartes et
   d'utilisations ; renommer (avec avertissement pour les autres cartes),
   stockage, description, variables, supprimer (avec confirmation).
-- Coller une carte copiée ouvre l'écran de création avec la carte comme première
-  carte.
+- Les variables sont repliées par défaut et marquées *(facultatif)*, sur la carte
+  et dans *Gérer les templates*.
 
-### decluttering-card et documentation
+### decluttering-card
 
-- **Copie proposée des templates decluttering-card** : à chaque ouverture de
-  l'éditeur Declutter Plus par un administrateur, les `decluttering_templates`
-  de tous les dashboards qui ne sont pas encore dans Declutter Plus sont proposés
-  à la copie dans les templates partagés. Les originaux ne sont jamais modifiés.
-  **Plus tard** redemande à la prochaine ouverture ; **Ne plus demander** arrête
-  la proposition (enregistré dans les données utilisateur Home Assistant). Un nom
-  déjà pris par un template différent reçoit le suffixe `_decluttering`. Les
-  templates copiés sont mémorisés : ils ne sont plus proposés, même si la copie
-  est modifiée ensuite, sauf si l'original decluttering-card change.
-- README : formulation plus claire, tout se fait graphiquement, sans YAML à
-  écrire.
+- À chaque ouverture de l'éditeur par un administrateur, les
+  `decluttering_templates` de tous les dashboards qui ne sont pas encore dans
+  Declutter Plus sont proposés à la copie dans les templates partagés. Les
+  originaux ne sont jamais modifiés.
+- **Plus tard** redemande à la prochaine ouverture ; **Ne plus demander** arrête
+  la proposition (enregistré dans les données utilisateur Home Assistant).
+- Un nom déjà pris par un template différent reçoit le suffixe `_decluttering`.
+- Les templates copiés sont mémorisés : ils ne sont plus proposés, même si la
+  copie est modifiée ensuite, sauf si l'original decluttering-card change.
 
-### Mode édition du dashboard
+### Dashboard en mode édition
 
-- Les cartes masquées hors mode édition (pop-ups Bubble Card fermées, cartes
-  dont les conditions de visibilité ne sont pas remplies) ne sont plus affichées
-  sur le dashboard en mode édition ; une petite mention indique combien sont
-  masquées (« +3 autre(s) carte(s) masquée(s) »). L'aperçu de l'éditeur Declutter
-  Plus ne change pas.
+- Les cartes masquées hors mode édition (pop-ups Bubble Card fermées, cartes dont
+  les conditions de visibilité ne sont pas remplies) ne sont plus affichées ; une
+  petite mention indique combien sont masquées (« +3 autre(s) carte(s)
+  masquée(s) »). L'aperçu de l'éditeur ne change pas.
+
+### Mises à jour et cache
+
 - Un numéro de build est affiché à côté de la version (bas de l'éditeur et
-  console du navigateur), pour vérifier qu'un nouveau fichier est chargé quand la
-  version ne change pas.
+  console du navigateur), pour savoir quel fichier est chargé quand la version ne
+  change pas.
 - À l'ouverture de l'éditeur, le plugin relit son fichier en contournant le
   cache : si un build plus récent existe, il propose **Recharger**. Un lien
   **Recharger sans cache** est toujours disponible en bas de l'éditeur.
-- Les variables sont repliées par défaut et marquées *(facultatif)*, sur la carte
-  et dans *Gérer les templates*.
+
+### Documentation
+
+- README réécrit pour la 2.0.0, en indiquant clairement que tout se fait
+  graphiquement, sans YAML à écrire.
 
 ## 1.8.2 — 13 septembre 2026
 

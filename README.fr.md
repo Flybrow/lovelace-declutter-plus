@@ -37,11 +37,12 @@ moderne et graphique de [decluttering-card](https://github.com/custom-cards/decl
   plus une sauvegarde automatique.
 - **Variables facultatives** avec de vrais sélecteurs (entité, icône, pièce…),
   pour réutiliser un template avec des valeurs différentes.
-- **Pop-ups Bubble Card** masquées jusqu'à leur ouverture, et complètes seulement
-  dans leur propre éditeur. Sur le dashboard en mode édition, les cartes masquées
-  hors édition (pop-ups fermées, conditions de visibilité non remplies) sont
-  écartées et résumées par une petite mention comme « +3 autre(s) carte(s)
-  masquée(s) ».
+- **Pop-ups Bubble Card** masquées jusqu'à leur ouverture. Dans l'éditeur
+  Declutter Plus, elles apparaissent sous forme d'encart réduit, et en entier
+  seulement dans leur propre éditeur. Sur le dashboard en mode édition, les
+  cartes masquées hors édition (pop-ups fermées, conditions de visibilité non
+  remplies) sont écartées et résumées par une petite mention comme « +3 autre(s)
+  carte(s) masquée(s) ».
 - **Compatible** decluttering-card : syntaxe `[[variable]]`, `default`,
   `card` / `element`, et `decluttering_templates` existants.
 - Anglais et français. Sans dépendance, sans build.
@@ -92,17 +93,18 @@ Declutter Plus.
 
 | Écran | Quand | Contenu |
 | --- | --- | --- |
-| Accueil | nouvelle carte | explications, **Créer un template**, **Utiliser un template existant**, **Gérer les templates** |
+| Accueil | nouvelle carte | explications, **Créer un template**, **Utiliser un template existant**, **Gérer les templates** ; propose de copier les templates decluttering-card ou 1.x trouvés |
 | Nouveau template | depuis l'accueil | nom, description, stockage, comment remplir le template |
 | Choisir un template | depuis l'accueil ou **Changer de template** | galerie avec miniatures et recherche |
-| Cette carte | carte existante | le template utilisé et **uniquement les valeurs des variables de cette carte** ; **Changer de template**, **Gérer les templates** |
+| Cette carte | carte existante | le template utilisé, un bouton **Gérer mes templates**, et **uniquement les valeurs des variables de cette carte** (bloc *Variables (facultatif)* replié) ; **Changer de template**, **Gérer les templates** |
 | Gérer les templates | depuis l'accueil ou Cette carte | tous les templates avec leur nombre de cartes et d'utilisations : renommer, stockage, description, variables, supprimer |
 
-L'aperçu à droite contient toujours **Ajouter une carte**, **Importer une
-section** et la barre d'édition de chaque carte. Les modifications d'un template
-(ses cartes, son nom, son stockage, ses variables) sont enregistrées
-immédiatement ; le bouton *Enregistrer* de Home Assistant enregistre cette carte
-(choix du template et valeurs des variables).
+Dès qu'un template est choisi ou créé, l'aperçu à droite contient **Ajouter une
+carte**, **Importer une section** et la barre d'édition de chaque carte (rien
+n'y est proposé sur l'écran d'accueil). Les modifications d'un template (ses
+cartes, son nom, son stockage, ses variables) sont enregistrées immédiatement ;
+le bouton *Enregistrer* de Home Assistant enregistre cette carte (choix du
+template et valeurs des variables).
 
 ### Suppression
 
@@ -126,7 +128,8 @@ changent.
 - Dans *Gérer les templates › Modifier*, **Rendre un réglage variable…**
   transforme un réglage des cartes du template en variable ; sa valeur actuelle
   devient la valeur par défaut. ✕ retire une variable.
-- Chaque carte Declutter Plus règle ses propres valeurs dans *Cette carte*.
+- Chaque carte Declutter Plus règle ses propres valeurs dans *Cette carte*, dans
+  le bloc *Variables (facultatif)*, replié par défaut.
 
 ## Stockage des templates
 

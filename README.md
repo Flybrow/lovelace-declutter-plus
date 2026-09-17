@@ -30,10 +30,11 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
   dashboard, included in Home Assistant backups, plus an automatic backup.
 - **Optional variables** with real pickers (entity, icon, area…), to reuse one
   template with different values.
-- **Bubble Card pop-ups** stay hidden until opened, and are fully shown only in
-  their own editor. On the dashboard in edit mode, cards hidden outside edit mode
-  (closed pop-ups, unmet visibility conditions) are left out and summed up by a
-  small note such as "+3 hidden card(s)".
+- **Bubble Card pop-ups** stay hidden until opened. In the Declutter Plus editor
+  they appear as a small placeholder, and fully only in their own editor. On the
+  dashboard in edit mode, cards hidden outside edit mode (closed pop-ups, unmet
+  visibility conditions) are left out and summed up by a small note such as
+  "+3 hidden card(s)".
 - **Compatible** with decluttering-card: `[[variable]]` syntax, `default`,
   `card` / `element`, and existing `decluttering_templates`.
 - English and French. No dependency, no build.
@@ -80,16 +81,17 @@ original cards yourself if you only want to keep the Declutter Plus version.
 
 | Screen | When | What |
 | --- | --- | --- |
-| Home | new card | explanations, **Create a template**, **Use an existing template**, **Manage templates** |
+| Home | new card | explanations, **Create a template**, **Use an existing template**, **Manage templates**; offers to copy decluttering-card templates or 1.x templates when found |
 | New template | from Home | name, description, storage, how to fill the template |
 | Choose a template | from Home or **Change template** | gallery with thumbnails and search |
-| This card | existing card | the template used and **this card's variable values only**; **Change template**, **Manage templates** |
+| This card | existing card | the template used, a **Manage my templates** button, and **this card's variable values only** (collapsed *Variables (optional)* block); **Change template**, **Manage templates** |
 | Manage templates | from Home or This card | every template with its number of cards and uses: rename, storage, description, variables, delete |
 
-The preview on the right always holds **Add card**, **Import a section** and the
-edit toolbar of each card. Changes to a template (its cards, name, storage,
-variables) are saved immediately; the *Save* button of Home Assistant saves this
-card (template choice and variable values).
+Once a template is chosen or created, the preview on the right holds **Add
+card**, **Import a section** and the edit toolbar of each card (nothing is
+offered there on the home screen). Changes to a template (its cards, name,
+storage, variables) are saved immediately; the *Save* button of Home Assistant
+saves this card (template choice and variable values).
 
 ### Deleting
 
@@ -111,7 +113,8 @@ one card per room with only the entity and the name changing.
 - In *Manage templates › Edit*, **Make a setting variable…** turns a setting of
   the template's cards into a variable; its current value becomes the default.
   ✕ removes a variable.
-- Each Declutter Plus card sets its own values in *This card*.
+- Each Declutter Plus card sets its own values in *This card*, in the
+  *Variables (optional)* block, collapsed by default.
 
 ## Template storage
 

@@ -8,8 +8,8 @@
 
 - Shared templates are now stored in **Home Assistant's system data** (readable
   by every user, written by administrators, updated live, included in Home
-  Assistant backups) instead of a hidden dashboard: no dashboard to protect,
-  no views to rebuild, one light read per page load.
+  Assistant backups) instead of a hidden dashboard: no dashboard to protect, no
+  views to rebuild, one light read per page load.
 - **Optional copy from 1.x, never automatic**: templates of the old hidden
   dashboard keep working there (read and edited) as long as you want. The home
   and *Manage templates* screens offer **Copy to the new storage**; the copy
@@ -20,44 +20,49 @@
 
 - **Home screen** for a new card: what the plugin does, **Create a template**,
   **Use an existing template**, **Manage templates**. The preview offers no
-  *Add card* / *Import a section* until a template is chosen or created.
+  *Add card* or *Import a section* until a template is chosen or created.
 - **New template screen**: name, description, storage, and how to fill the
   template (add or paste cards, import a section with its containers, edit from
-  any page where the template is used).
+  any page where the template is used). Pasting a copied card opens this screen
+  with the card as first card.
 - **This card**: an existing card only shows the template it uses and its own
-  variable values, with **Change template** and **Manage templates**, plus a
-  small **Manage my templates** button next to the template name.
+  variable values, with a **Manage my templates** button next to the template
+  name, and **Change template** / **Manage templates** links.
 - **Manage templates**: every template with its number of cards and uses;
   rename (with a warning for other cards), storage, description, variables,
   delete (with confirmation).
-- Pasting a copied card opens the creation screen with the card as first card.
+- Variables are collapsed by default and marked *(optional)*, on the card and in
+  *Manage templates*.
 
-### decluttering-card and documentation
+### decluttering-card
 
-- **decluttering-card templates offered for copy**: each time an administrator
-  opens the Declutter Plus editor, `decluttering_templates` of every dashboard
-  that are not in Declutter Plus yet are offered for copy into the shared
-  templates. The originals are never changed. **Later** asks again next time;
-  **Don't ask again** stops it (saved in the user's Home Assistant data). A name
-  already used by a different template gets the `_decluttering` suffix. Copied
-  templates are remembered: they are not offered again, even if the copy is
-  edited afterwards, unless the original decluttering-card template changes.
-- README: clearer wording that everything is done graphically, with no YAML to
-  write.
+- Each time an administrator opens the editor, `decluttering_templates` of every
+  dashboard that are not in Declutter Plus yet are offered for copy into the
+  shared templates. The originals are never changed.
+- **Later** asks again next time; **Don't ask again** stops the offer (saved in
+  the user's Home Assistant data).
+- A name already used by a different template gets the `_decluttering` suffix.
+- Copied templates are remembered: they are not offered again, even if the copy
+  is edited afterwards, unless the original decluttering-card template changes.
 
-### Dashboard edit mode
+### Dashboard in edit mode
 
-- Cards hidden outside edit mode (closed Bubble Card pop-ups, cards with
-  visibility conditions that are not met) are no longer shown on the dashboard
-  in edit mode; a small note shows how many are hidden ("+3 hidden card(s)").
-  The Declutter Plus editor preview is unchanged.
+- Cards hidden outside edit mode (closed Bubble Card pop-ups, cards whose
+  visibility conditions are not met) are no longer shown; a small note tells how
+  many are hidden ("+3 hidden card(s)"). The editor preview is unchanged.
+
+### Updates and cache
+
 - A build number is shown next to the version (editor footer and browser
-  console), to check that a new file is loaded when the version does not change.
+  console), to check which file is loaded when the version does not change.
 - When the editor opens, the plugin re-reads its file bypassing the cache: if a
   newer build exists, it offers **Reload**. A **Reload without cache** link is
   always available at the bottom of the editor.
-- Variables are collapsed by default and marked *(optional)*, on the card and in
-  *Manage templates*.
+
+### Documentation
+
+- README rewritten for 2.0.0, stating clearly that everything is done
+  graphically, with no YAML to write.
 
 ## 1.8.2 — 13 September 2026
 
