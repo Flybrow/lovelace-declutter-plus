@@ -7,6 +7,8 @@
   "use strict";
 
   const VERSION = "2.0.0";
+  // repère de build, changé à chaque publication d'une même version (cache navigateur)
+  const BUILD = "2026-09-17.3";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -71,6 +73,11 @@
       createTemplateHint: "Name it, then add cards from the preview.",
       useTemplate: "Use an existing template",
       manageTemplates: "Manage templates",
+      manageMine: "Manage my templates",
+      optional: "(optional)",
+      updateAvailable: "A newer Declutter Plus file is available (v{version} · build {build}). Reload to use it.",
+      reloadNow: "Reload",
+      reloadNoCache: "Reload without cache",
       back: "Back",
       cancel: "Cancel",
       createTitle: "New template",
@@ -99,13 +106,15 @@
       legacyFound: "{count} shared template(s) are still in the old storage dashboard (Declutter Plus 1.x). They keep working there.",
       legacyCopyHelp: "You can copy them to Home Assistant's system data, the new storage: no hidden dashboard to maintain, updated live, included in backups. The old dashboard is left untouched and stays usable.",
       legacyCopy: "Copy to the new storage",
-      legacyCopied: "{count} template(s) copied to the new storage. The old storage dashboard is unchanged; delete it in Settings › Dashboards only when you no longer need it.",
+      legacyCopied: "Templates copied to the new storage: {count}. The old storage dashboard is kept as it was. You can delete it later in Settings › Dashboards if you no longer need it.",
       declFound: "{count} decluttering-card template(s) found in {dashboards} dashboard(s). Copy them into Declutter Plus?",
       declHelp: "They are copied to Declutter Plus shared templates. The original decluttering-card templates and cards are not changed and keep working; delete them yourself if you wish.",
       declCopy: "Copy into Declutter Plus",
       declLater: "Later",
       declNever: "Don't ask again",
       declCopied: "{count} decluttering-card template(s) copied into Declutter Plus. Your decluttering-card cards still use decluttering-card: to use a copy, add a Declutter Plus card and choose the template.",
+      hiddenCards: "+{count} hidden card(s)",
+      hiddenCardsHint: "Hidden outside edit mode (closed pop-ups, visibility conditions).",
       popupNoHash: "Pop-up without hash",
       backupFound: "No shared template found, but a backup of {count} template(s) from {date} exists.",
       backupRestore: "Restore templates",
@@ -176,6 +185,11 @@
       createTemplateHint: "Nommez-le, puis ajoutez des cartes depuis l'aperçu.",
       useTemplate: "Utiliser un template existant",
       manageTemplates: "Gérer les templates",
+      manageMine: "Gérer mes templates",
+      optional: "(facultatif)",
+      updateAvailable: "Un fichier Declutter Plus plus récent est disponible (v{version} · build {build}). Rechargez pour l'utiliser.",
+      reloadNow: "Recharger",
+      reloadNoCache: "Recharger sans cache",
       back: "Retour",
       cancel: "Annuler",
       createTitle: "Nouveau template",
@@ -204,13 +218,15 @@
       legacyFound: "{count} template(s) partagé(s) sont encore dans l'ancien dashboard de stockage (Declutter Plus 1.x). Ils continuent d'y fonctionner.",
       legacyCopyHelp: "Vous pouvez les copier dans les données système de Home Assistant, le nouveau stockage : plus de dashboard caché à maintenir, mise à jour en direct, inclus dans les sauvegardes. L'ancien dashboard n'est pas modifié et reste utilisable.",
       legacyCopy: "Copier vers le nouveau stockage",
-      legacyCopied: "{count} template(s) copié(s) vers le nouveau stockage. L'ancien dashboard de stockage n'a pas changé ; ne le supprimez dans Paramètres › Tableaux de bord que lorsque vous n'en avez plus besoin.",
+      legacyCopied: "Templates copiés dans le nouveau stockage : {count}. L'ancien dashboard de stockage est conservé tel quel. Vous pourrez le supprimer plus tard dans Paramètres › Tableaux de bord, si vous n'en avez plus besoin.",
       declFound: "{count} template(s) decluttering-card trouvé(s) dans {dashboards} dashboard(s). Les copier dans Declutter Plus ?",
       declHelp: "Ils sont copiés dans les templates partagés de Declutter Plus. Les templates et cartes decluttering-card d'origine ne sont pas modifiés et continuent de fonctionner ; supprimez-les vous-même si vous le souhaitez.",
       declCopy: "Copier dans Declutter Plus",
       declLater: "Plus tard",
       declNever: "Ne plus demander",
       declCopied: "{count} template(s) decluttering-card copié(s) dans Declutter Plus. Vos cartes decluttering-card utilisent toujours decluttering-card : pour utiliser une copie, ajoutez une carte Declutter Plus et choisissez le template.",
+      hiddenCards: "+{count} autre(s) carte(s) masquée(s)",
+      hiddenCardsHint: "Masquées hors mode édition (pop-ups fermées, conditions de visibilité).",
       popupNoHash: "Pop-up sans hash",
       backupFound: "Aucun template partagé trouvé, mais une sauvegarde de {count} template(s) du {date} existe.",
       backupRestore: "Restaurer les templates",
@@ -619,6 +635,49 @@
     info.appendChild(hint);
     card.appendChild(info);
     return card;
+  }
+
+  // Adresse réelle du fichier du plugin (ressource chargée par la page).
+  function scriptUrl() {
+    try {
+      const entry = performance.getEntriesByType("resource").find(function (r) {
+        return /declutter-plus\.js(\?|#|$)/.test(r.name);
+      });
+      return entry ? entry.name : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Relit le fichier en contournant le cache : met aussi à jour le cache du navigateur.
+  let updateCheck = null;
+
+  function checkForUpdate() {
+    if (updateCheck) return updateCheck;
+    const url = scriptUrl();
+    if (!url || typeof fetch !== "function") return Promise.resolve(null);
+    updateCheck = fetch(url, { cache: "reload" })
+      .then(function (response) {
+        return response.ok ? response.text() : "";
+      })
+      .then(function (text) {
+        const version = (text.match(/const VERSION = "([^"]+)"/) || [])[1];
+        const build = (text.match(/const BUILD = "([^"]+)"/) || [])[1];
+        if (!version || !build) return null;
+        return version !== VERSION || build !== BUILD ? { version: version, build: build } : null;
+      })
+      .catch(function () {
+        return null;
+      });
+    return updateCheck;
+  }
+
+  function reloadWithoutCache() {
+    const url = scriptUrl();
+    const refresh = url && typeof fetch === "function" ? fetch(url, { cache: "reload" }).catch(function () {}) : Promise.resolve();
+    refresh.then(function () {
+      location.reload();
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -1302,10 +1361,21 @@
 
   // Templates decluttering-card pas encore copiés : absents de la bibliothèque, ou
   // présents sous un autre contenu (copiés alors avec un suffixe).
-  function pendingDecluttering(scan, shared) {
+  // Empreinte courte d'un template (mémoriser les copies sans stocker le contenu).
+  function fingerprint(value) {
+    const text = JSON.stringify(value) || "";
+    let hash = 5381;
+    for (let i = 0; i < text.length; i++) hash = ((hash * 33) ^ text.charCodeAt(i)) >>> 0;
+    return hash.toString(36) + "." + text.length;
+  }
+
+  function pendingDecluttering(scan, shared, copied) {
     const pending = {};
+    copied = isObject(copied) ? copied : {};
     Object.keys(scan.templates).forEach(function (name) {
       const raw = scan.templates[name];
+      // déjà copié et original inchangé depuis : ne plus proposer
+      if (copied[name] === fingerprint(raw)) return;
       if (hasVar(shared, name) && JSON.stringify(shared[name]) === JSON.stringify(raw)) return;
       if (hasVar(shared, name + DECLUTTERING_SUFFIX) && JSON.stringify(shared[name + DECLUTTERING_SUFFIX]) === JSON.stringify(raw)) return;
       pending[name] = raw;
@@ -1630,7 +1700,14 @@
     ".dp-cell{position:relative;min-width:0;grid-column:span " + GRID_COLUMNS + "}" +
     ".dp-cell>*{display:block}" +
     // case masquée par sa carte (visibilité, pop-up fermée) : ne réserve pas de place
-    ".dp-cell:has(>hui-card[hidden]),.dp-cell:has(>hui-card[style*='display: none']){display:none}";
+    ".dp-cell:has(>hui-card[hidden]),.dp-cell:has(>hui-card[style*='display: none']){display:none}" +
+    ".dp-hidden{grid-column:1/-1;font-size:12px;color:var(--secondary-text-color);text-align:center;padding:4px 8px;" +
+    "border:1px dashed var(--divider-color);border-radius:var(--ha-card-border-radius,12px)}";
+
+  // Masqué hors édition : pop-up Bubble Card fermée, ou carte à conditions de visibilité.
+  function isHiddenOutsideEdit(config) {
+    return isBubblePopup(config) || (isObject(config) && Array.isArray(config.visibility) && config.visibility.length > 0);
+  }
 
   // Largeur : grid_options de la carte, sinon getGridOptions() de la carte, sinon pleine largeur.
   function gridColumns(config, el) {
@@ -1670,10 +1747,10 @@
     }
 
     set preview(v) {
+      if (this._preview === !!v) return;
       this._preview = !!v;
-      this._cards.forEach(function (card) {
-        if (card.localName === "hui-card") card.preview = !!v;
-      });
+      // la liste des cartes affichées dépend du mode édition : reconstruire
+      if (this._config && helpers) this._build();
     }
 
     get preview() {
@@ -1705,10 +1782,18 @@
       grid.className = "dp-grid";
       const cells = [];
       this._cards = [];
+      if (this._observer) this._observer.disconnect();
+      let skipped = 0;
       this._config.cards.forEach((config, index) => {
+        // mode édition du dashboard : les pop-ups fermées ne sont pas montrées
+        if (this._preview && isBubblePopup(config)) {
+          skipped++;
+          return;
+        }
         const cell = document.createElement("div");
         cell.className = "dp-cell";
-        const card = createHuiCard(config, this._hass, this._preview);
+        // une carte à conditions est rendue comme hors édition : elle se masque si besoin
+        const card = createHuiCard(config, this._hass, this._preview && !isHiddenOutsideEdit(config));
         card.addEventListener("ll-rebuild", (ev) => {
           if (card.localName === "hui-card") return;
           ev.stopPropagation();
@@ -1727,6 +1812,44 @@
       });
       root.appendChild(grid);
       layoutGrid(cells);
+      if (this._preview) this._watchHidden(grid, skipped);
+    }
+
+    // Mention « +N cartes masquées » : pop-ups écartées + cartes masquées par leurs conditions
+    _watchHidden(grid, skipped) {
+      const note = document.createElement("div");
+      note.className = "dp-hidden";
+      const lang = resolveLang(this._hass);
+      note.title = t(lang, "hiddenCardsHint");
+      const update = () => {
+        const hidden =
+          skipped +
+          this._cards.filter(function (card) {
+            return card.hasAttribute("hidden") || card.style.display === "none";
+          }).length;
+        note.textContent = tSub(lang, "hiddenCards", { count: hidden });
+        note.hidden = !hidden;
+      };
+      grid.appendChild(note);
+      update();
+      if (typeof MutationObserver === "function") {
+        this._observer = new MutationObserver(update);
+        this._cards.forEach((card) => {
+          this._observer.observe(card, { attributes: true, attributeFilter: ["hidden", "style"] });
+        });
+      }
+    }
+
+    disconnectedCallback() {
+      if (this._observer) this._observer.disconnect();
+    }
+
+    connectedCallback() {
+      if (this._observer && this._cards.length) {
+        this._cards.forEach((card) => {
+          this._observer.observe(card, { attributes: true, attributeFilter: ["hidden", "style"] });
+        });
+      }
     }
 
     getCardSize() {
@@ -1769,6 +1892,8 @@
     ".dp-tools button{border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;" +
     "background:var(--primary-color);color:var(--text-primary-color,#fff);font-size:15px}" +
     ".dp-frame{position:relative;display:block}" +
+    ".dp-hidden{font-size:12px;color:var(--secondary-text-color);text-align:center;padding:4px 8px;" +
+    "border:1px dashed var(--divider-color);border-radius:var(--ha-card-border-radius,12px)}" +
     ".dp-one>.dp-cell,.dp-stack>.dp-cell{position:relative;display:block}" +
     ".dp-stack{display:flex;flex-direction:column;gap:var(--vertical-stack-card-gap,var(--stack-card-gap,8px))}" +
     GRID_STYLE +
@@ -1919,8 +2044,9 @@
         return;
       }
       if (!name) {
+        // pas encore de template (écran d'accueil) : rien à ajouter dans l'aperçu
         this._clear();
-        this._syncAddButton(lang, "add");
+        this._syncAddButton(lang, null);
         return;
       }
       const lovelace = findLovelace(this);
@@ -1928,7 +2054,7 @@
       const tpl = found && normalizeTemplate(found.raw);
       if (!tpl) {
         this._showError(tSub(lang, "templateNotFound", { name: name }));
-        this._syncAddButton(lang, "add");
+        this._syncAddButton(lang, null);
         return;
       }
       if (tpl.kind !== this.constructor.kind) {
@@ -1944,7 +2070,14 @@
 
     _createChild(kind, config) {
       if (kind === "card" && !this._editable() && !isStack(config) && config.type !== GRID_TYPE) {
-        return createHuiCard(config, this._hass, this._preview);
+        if (this._preview && isBubblePopup(config)) {
+          const note = document.createElement("div");
+          note.className = "dp-hidden";
+          note.textContent = tSub(resolveLang(this._hass), "hiddenCards", { count: 1 });
+          note.title = t(resolveLang(this._hass), "hiddenCardsHint");
+          return note;
+        }
+        return createHuiCard(config, this._hass, this._preview && !isHiddenOutsideEdit(config));
       }
       return createChild(kind, config);
     }
@@ -2262,6 +2395,15 @@
     .tpl-sub { font-size:12px; color:var(--secondary-text-color); }
     .tpl-actions { display:flex; gap:14px; }
     .link.danger { color:var(--error-color); }
+    details.fold { border:1px solid var(--divider-color); border-radius:12px; padding:0 14px; margin-top:14px; }
+    details.fold summary { cursor:pointer; padding:11px 0; font-size:14px; font-weight:500; }
+    details.fold summary .opt { font-weight:400; color:var(--secondary-text-color); font-size:12px; }
+    details.fold .fold-body { padding-bottom:12px; }
+    .version .link { font-size:11px; padding:0; }
+    .head-row { display:flex; align-items:flex-end; justify-content:space-between; gap:8px; }
+    .head-row .lbl { margin-bottom:4px; }
+    button.small { font:inherit; font-size:12px; padding:3px 10px; border-radius:14px; cursor:pointer; margin-bottom:2px;
+      border:1px solid var(--divider-color); background:transparent; color:var(--primary-color); }
     .offer { margin:0 0 14px; border-color:var(--primary-color); }
     .offer-title { font-weight:500; margin-bottom:4px; }
     .offer .actions { margin-top:10px; }
@@ -2300,6 +2442,8 @@
       this._draftCreate = null; // saisie de l'écran de création
       this._manageOpen = null; // template déplié dans l'écran de gestion
       this._usage = null; // utilisations par template (écran de gestion)
+      this._update = null; // fichier plus récent sur le serveur
+      this._folds = {}; // blocs déroulants ouverts
       this._decl = null; // templates decluttering-card à proposer, pour cette ouverture
       this._declHidden = false;
       // ne redessiner que si les templates ont vraiment changé
@@ -2329,6 +2473,11 @@
       if (first) {
         installDeleteGuard(hass);
         this._checkDecluttering(hass);
+        checkForUpdate().then((update) => {
+          if (!update) return;
+          this._update = update;
+          this._render();
+        });
         loadHelpers().then(this._render.bind(this), function () {});
         loadLibrary(hass, this._path(), true).then(this._onLibrary);
       } else if (resolveLang(hass) !== this._lastLang) {
@@ -2459,6 +2608,16 @@
       if (this._message) {
         root.appendChild(this._el("div", { class: "notice " + (this._message.type || ""), text: this._message.text }));
       }
+      if (this._update) {
+        const reload = this._el("button", { class: "action primary", type: "button", text: t(lang, "reloadNow") });
+        reload.addEventListener("click", reloadWithoutCache);
+        root.appendChild(
+          this._el("div", { class: "box offer" }, [
+            this._el("div", { class: "help", text: tSub(lang, "updateAvailable", this._update) }),
+            this._el("div", { class: "actions" }, [reload])
+          ])
+        );
+      }
       this._renderDeclutteringOffer(root, lang);
       const view = this._currentView();
       if (view === VIEW_CARD) root.appendChild(this._renderCard(lang));
@@ -2467,7 +2626,22 @@
       else if (view === VIEW_MANAGE) root.appendChild(this._renderManage(lang));
       else root.appendChild(this._renderHome(lang));
       // version chargée : repère simple quand le navigateur garde un ancien fichier
-      root.appendChild(this._el("div", { class: "version", text: "Declutter Plus v" + VERSION }));
+      const reloadLink = this._link(t(lang, "reloadNoCache"), reloadWithoutCache);
+      root.appendChild(this._el("div", { class: "version" }, ["Declutter Plus v" + VERSION + " · build " + BUILD + " · ", reloadLink]));
+    }
+
+    _fold(key, lang, titleKey, content) {
+      const details = this._el("details", { class: "fold" });
+      details.open = !!this._folds[key];
+      details.addEventListener("toggle", () => {
+        this._folds[key] = details.open;
+      });
+      details.appendChild(
+        this._el("summary", null, [this._el("span", { text: t(lang, titleKey) }), this._el("span", { class: "opt", text: " " + t(lang, "optional") })])
+      );
+      content.classList.add("fold-body");
+      details.appendChild(content);
+      return details;
     }
 
     _backLink(lang) {
@@ -2654,14 +2828,22 @@
         return box;
       }
       const tpl = normalizeTemplate(current.found.raw);
-      box.appendChild(this._el("label", { class: "lbl", text: t(lang, "templateLabel") }));
+      // en-tête : « Template » et, à droite, accès direct à la gestion
+      const head = this._el("div", { class: "head-row" }, [this._el("label", { class: "lbl", text: t(lang, "templateLabel") })]);
+      if (isAdmin(this._hass)) {
+        const manage = this._el("button", { class: "small", type: "button", text: t(lang, "manageMine") });
+        manage.addEventListener("click", () => this._go(VIEW_MANAGE));
+        head.appendChild(manage);
+      }
+      box.appendChild(head);
       box.appendChild(this._el("div", { class: "current" }, [current.name, this._badge(lang, current.found.scope)]));
       if (tpl.description) box.appendChild(this._el("div", { class: "help", text: tpl.description }));
 
-      box.appendChild(this._el("h4", { text: t(lang, "panelVariables") }));
+      const vars = this._el("div");
       const schema = this._variableSchema(tpl);
-      if (schema.length) box.appendChild(this._variablesForm(lang, tpl, schema));
-      else box.appendChild(this._el("div", { class: "help", text: t(lang, "noVariablesCard") }));
+      if (schema.length) vars.appendChild(this._variablesForm(lang, tpl, schema));
+      else vars.appendChild(this._el("div", { class: "help", text: t(lang, "noVariablesCard") }));
+      box.appendChild(this._fold("card-vars", lang, "panelVariables", vars));
 
       if (tpl.kind === "card" && isAdmin(this._hass)) {
         box.appendChild(this._el("div", { class: "box" }, [this._el("div", { class: "help", text: t(lang, "editHint") })]));
@@ -2791,7 +2973,6 @@
       const box = this._el("div");
       const given = target.name === this._config.template ? this._config.variables : {};
       const ed = draftFromTemplate(target.name, target.found, given);
-      box.appendChild(this._el("h4", { text: t(lang, "templateVars") }));
       box.appendChild(this._el("div", { class: "help", text: t(lang, "templateVarsHelp") }));
       const chips = this._el("div", { class: "chips" });
       ed.vars.forEach((v) => {
@@ -2831,7 +3012,7 @@
         });
         box.appendChild(pick);
       }
-      return box;
+      return this._fold("tpl-vars-" + target.name, lang, "templateVars", box);
     }
 
     // À chaque ouverture (administrateur), sauf « Ne plus demander »
@@ -2840,6 +3021,7 @@
       Promise.all([readPrefs(hass), scanDeclutteringTemplates(hass), loadLibrary(hass, this._path())])
         .then(([prefs, scan]) => {
           if (prefs.skip_decluttering_import) return;
+          this._prefs = prefs;
           this._decl = scan;
           this._render();
         })
@@ -2850,7 +3032,7 @@
 
     _renderDeclutteringOffer(root, lang) {
       if (!this._decl || this._declHidden || !isAdmin(this._hass)) return;
-      const pending = pendingDecluttering(this._decl, this._entry().templates);
+      const pending = pendingDecluttering(this._decl, this._entry().templates, (this._prefs || {}).decluttering_copied);
       const count = Object.keys(pending).length;
       if (!count) return;
       const never = this._el("input", { type: "checkbox", id: "decl-never" });
@@ -2864,7 +3046,7 @@
       const later = this._el("button", { class: "action", type: "button", text: t(lang, "declLater") });
       later.addEventListener("click", () => {
         this._declHidden = true;
-        if (never.checked) writePrefs(this._hass, { skip_decluttering_import: true }).catch(function () {});
+        if (never.checked) writePrefs(this._hass, Object.assign({}, this._prefs, { skip_decluttering_import: true })).catch(function () {});
         this._render();
       });
       box.appendChild(this._el("div", { class: "actions" }, [later, copy]));
@@ -2882,7 +3064,17 @@
           }
           lib[target] = clone(pending[name]);
         });
-      }).then(() => (never ? writePrefs(this._hass, { skip_decluttering_import: true }).catch(function () {}) : null));
+      }).then(() => {
+        // mémorise les copies : même modifiée ensuite, une copie n'est plus reproposée
+        const prefs = Object.assign({}, this._prefs);
+        prefs.decluttering_copied = Object.assign({}, prefs.decluttering_copied);
+        names.forEach(function (name) {
+          prefs.decluttering_copied[name] = fingerprint(pending[name]);
+        });
+        if (never) prefs.skip_decluttering_import = true;
+        this._prefs = prefs;
+        return writePrefs(this._hass, prefs).catch(function () {});
+      });
       this._declHidden = true;
       this._run(chain, tSub(lang, "declCopied", { count: names.length })).catch(function () {});
     }
@@ -3677,5 +3869,5 @@
     documentationURL: "https://github.com/Flybrow/lovelace-declutter-plus"
   });
 
-  console.info("%c DECLUTTER-PLUS %c v" + VERSION + " ", "color:#fff;background:#3f51b5;font-weight:700", "color:#3f51b5");
+  console.info("%c DECLUTTER-PLUS %c v" + VERSION + " (build " + BUILD + ") ", "color:#fff;background:#3f51b5;font-weight:700", "color:#3f51b5");
 })();

@@ -30,8 +30,10 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
   dashboard, included in Home Assistant backups, plus an automatic backup.
 - **Optional variables** with real pickers (entity, icon, area…), to reuse one
   template with different values.
-- **Bubble Card pop-ups** behave like in a section: hidden until opened,
-  minimized in edit mode, fully shown only in their own editor.
+- **Bubble Card pop-ups** stay hidden until opened, and are fully shown only in
+  their own editor. On the dashboard in edit mode, cards hidden outside edit mode
+  (closed pop-ups, unmet visibility conditions) are left out and summed up by a
+  small note such as "+3 hidden card(s)".
 - **Compatible** with decluttering-card: `[[variable]]` syntax, `default`,
   `card` / `element`, and existing `decluttering_templates`.
 - English and French. No dependency, no build.
@@ -50,8 +52,10 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
 **Manual**: copy `declutter-plus.js` to `/config/www/` and add the resource
 `/local/declutter-plus.js` (type *JavaScript module*).
 
-The loaded version is shown at the bottom of the Declutter Plus editor. If it is
-not the latest one after an update, clear the browser (or app) cache.
+The loaded version and build number are shown at the bottom of the Declutter
+Plus editor (and in the browser console). When the editor opens, it checks for a
+newer file and offers **Reload**; the **Reload without cache** link next to the
+version does the same at any time.
 
 ## Quick start
 
@@ -213,6 +217,8 @@ templates).
   working. Delete them yourself if you wish.
 - A template whose name already exists in Declutter Plus with a different
   content is copied with the `_decluttering` suffix.
+- Templates already copied are not offered again, even if you edit the copy,
+  unless the original decluttering-card template changes.
 - **Later** asks again next time; tick **Don't ask again** to stop the offer
   (saved in your Home Assistant user data, on every device).
 - To use a copy, add a Declutter Plus card and choose the template.

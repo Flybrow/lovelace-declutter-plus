@@ -22,13 +22,15 @@
 
 - **Écran d'accueil** pour une nouvelle carte : ce que fait le plugin,
   **Créer un template**, **Utiliser un template existant**, **Gérer les
-  templates**.
+  templates**. L'aperçu ne propose ni *Ajouter une carte* ni *Importer une
+  section* tant qu'aucun template n'est choisi ou créé.
 - **Écran de création** : nom, description, stockage, et comment remplir le
   template (ajouter ou coller des cartes, importer une section avec ses
   conteneurs, modifier depuis n'importe quelle page où le template est utilisé).
 - **Cette carte** : une carte existante n'affiche que le template qu'elle
   utilise et ses propres valeurs de variables, avec **Changer de template** et
-  **Gérer les templates**.
+  **Gérer les templates**, plus un petit bouton **Gérer mes templates** à côté du
+  nom du template.
 - **Gérer les templates** : tous les templates avec leur nombre de cartes et
   d'utilisations ; renommer (avec avertissement pour les autres cartes),
   stockage, description, variables, supprimer (avec confirmation).
@@ -43,9 +45,27 @@
   à la copie dans les templates partagés. Les originaux ne sont jamais modifiés.
   **Plus tard** redemande à la prochaine ouverture ; **Ne plus demander** arrête
   la proposition (enregistré dans les données utilisateur Home Assistant). Un nom
-  déjà pris par un template différent reçoit le suffixe `_decluttering`.
+  déjà pris par un template différent reçoit le suffixe `_decluttering`. Les
+  templates copiés sont mémorisés : ils ne sont plus proposés, même si la copie
+  est modifiée ensuite, sauf si l'original decluttering-card change.
 - README : formulation plus claire, tout se fait graphiquement, sans YAML à
   écrire.
+
+### Mode édition du dashboard
+
+- Les cartes masquées hors mode édition (pop-ups Bubble Card fermées, cartes
+  dont les conditions de visibilité ne sont pas remplies) ne sont plus affichées
+  sur le dashboard en mode édition ; une petite mention indique combien sont
+  masquées (« +3 autre(s) carte(s) masquée(s) »). L'aperçu de l'éditeur Declutter
+  Plus ne change pas.
+- Un numéro de build est affiché à côté de la version (bas de l'éditeur et
+  console du navigateur), pour vérifier qu'un nouveau fichier est chargé quand la
+  version ne change pas.
+- À l'ouverture de l'éditeur, le plugin relit son fichier en contournant le
+  cache : si un build plus récent existe, il propose **Recharger**. Un lien
+  **Recharger sans cache** est toujours disponible en bas de l'éditeur.
+- Les variables sont repliées par défaut et marquées *(facultatif)*, sur la carte
+  et dans *Gérer les templates*.
 
 ## 1.8.2 — 13 septembre 2026
 

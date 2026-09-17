@@ -37,9 +37,11 @@ moderne et graphique de [decluttering-card](https://github.com/custom-cards/decl
   plus une sauvegarde automatique.
 - **Variables facultatives** avec de vrais sélecteurs (entité, icône, pièce…),
   pour réutiliser un template avec des valeurs différentes.
-- **Pop-ups Bubble Card** comme dans une section : masquées jusqu'à leur
-  ouverture, réduites en mode édition, complètes seulement dans leur propre
-  éditeur.
+- **Pop-ups Bubble Card** masquées jusqu'à leur ouverture, et complètes seulement
+  dans leur propre éditeur. Sur le dashboard en mode édition, les cartes masquées
+  hors édition (pop-ups fermées, conditions de visibilité non remplies) sont
+  écartées et résumées par une petite mention comme « +3 autre(s) carte(s)
+  masquée(s) ».
 - **Compatible** decluttering-card : syntaxe `[[variable]]`, `default`,
   `card` / `element`, et `decluttering_templates` existants.
 - Anglais et français. Sans dépendance, sans build.
@@ -58,8 +60,10 @@ moderne et graphique de [decluttering-card](https://github.com/custom-cards/decl
 **Manuelle** : copier `declutter-plus.js` dans `/config/www/` et ajouter la
 ressource `/local/declutter-plus.js` (type *Module JavaScript*).
 
-La version chargée s'affiche en bas de l'éditeur Declutter Plus. Si ce n'est pas
-la dernière après une mise à jour, videz le cache du navigateur (ou de l'app).
+La version et le numéro de build chargés s'affichent en bas de l'éditeur
+Declutter Plus (et dans la console du navigateur). À l'ouverture, l'éditeur
+vérifie s'il existe un fichier plus récent et propose **Recharger** ; le lien
+**Recharger sans cache** à côté de la version fait de même à tout moment.
 
 ## Démarrage
 
@@ -232,6 +236,8 @@ de les **Copier dans Declutter Plus** (templates partagés).
   continuent de fonctionner. Supprimez-les vous-même si vous le souhaitez.
 - Un template dont le nom existe déjà dans Declutter Plus avec un contenu
   différent est copié avec le suffixe `_decluttering`.
+- Les templates déjà copiés ne sont plus proposés, même si vous modifiez la
+  copie, sauf si l'original decluttering-card change.
 - **Plus tard** redemandera à la prochaine ouverture ; cochez **Ne plus
   demander** pour arrêter la proposition (enregistré dans vos données
   utilisateur Home Assistant, sur tous vos appareils).
