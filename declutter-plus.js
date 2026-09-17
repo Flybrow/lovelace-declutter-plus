@@ -8,7 +8,7 @@
 
   const VERSION = "2.0.0";
   // repère de build, changé à chaque publication d'une même version (cache navigateur)
-  const BUILD = "2026-09-17.6";
+  const BUILD = "2026-09-17.7";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -75,6 +75,7 @@
       useTemplate: "Use an existing template",
       manageTemplates: "Manage templates",
       manageMine: "Manage my templates",
+      save: "Save",
       optional: "(optional)",
       updateAvailable: "A newer Declutter Plus file is available (v{version} · build {build}). Reload to use it.",
       reloadNow: "Reload",
@@ -188,6 +189,7 @@
       useTemplate: "Utiliser un template existant",
       manageTemplates: "Gérer les templates",
       manageMine: "Gérer mes templates",
+      save: "Enregistrer",
       optional: "(facultatif)",
       updateAvailable: "Un fichier Declutter Plus plus récent est disponible (v{version} · build {build}). Rechargez pour l'utiliser.",
       reloadNow: "Recharger",
@@ -2489,6 +2491,7 @@
       background:transparent; color:var(--primary-text-color); }
     button.action.primary { background:var(--primary-color); border-color:var(--primary-color); color:var(--text-primary-color,#fff); }
     .actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+    .actions[hidden] { display:none; }
     .box { border:1px solid var(--divider-color); border-radius:12px; padding:10px 14px; margin-top:14px; }
     .box .help { margin:0; }
     .gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:8px;
@@ -2768,6 +2771,7 @@
       if (!manage) return;
       this._manage = null;
       this._manageOpen = null;
+      this._manageEdit = null;
       try {
         manage.dialog.close();
       } catch (e) {}
@@ -3153,6 +3157,7 @@
             this._el("div", { class: "tpl-actions" }, [
               this._link(t(lang, open ? "close" : "edit"), () => {
                 this._manageOpen = open ? null : name;
+                this._manageEdit = null;
                 this._renderManagePopup();
               }),
               this._link(t(lang, "remove"), () => this._deleteByName(name), "danger")
@@ -3165,17 +3170,49 @@
       return box;
     }
 
+    // Brouillon de la popup de gestion : les changements (nom, description,
+    // variables) ne sont écrits qu'au clic sur Enregistrer.
+    _manageDraft(target) {
+      const edit = this._manageEdit;
+      if (edit && edit.name === target.name) return edit;
+      const given = target.name === this._config.template ? this._config.variables : {};
+      const ed = draftFromTemplate(target.name, target.found, given);
+      this._manageEdit = { name: target.name, ed: ed, original: this._draftSignature(ed) };
+      return this._manageEdit;
+    }
+
+    _draftSignature(ed) {
+      return JSON.stringify([
+        ed.name,
+        ed.description || "",
+        ed.vars.map(function (v) {
+          return [v.name, v.path];
+        })
+      ]);
+    }
+
     _renderTemplateDetail(lang, target, tpl) {
       const box = this._el("div");
+      const edit = this._manageDraft(target);
+      const ed = edit.ed;
+      const save = this._el("button", { class: "action primary", type: "button", text: haLabel(this._hass, "ui.common.save", lang, "save") });
+      const actions = this._el("div", { class: "actions" }, [save]);
+      const refresh = () => {
+        actions.hidden = this._draftSignature(ed) === edit.original;
+      };
+      save.addEventListener("click", () => this._saveManageEdit());
+
       const nameInput = this._el("input", { class: "text" });
-      nameInput.value = target.name;
-      nameInput.addEventListener("change", () => this._rename(target.name, nameInput.value.trim()));
+      nameInput.value = ed.name;
+      nameInput.addEventListener("input", () => {
+        ed.name = nameInput.value.trim();
+        refresh();
+      });
       const descInput = this._el("input", { class: "text" });
-      descInput.value = tpl.description;
-      descInput.addEventListener("change", () => {
-        this._updateTemplate(function (ed) {
-          ed.description = descInput.value;
-        }, null, target.name);
+      descInput.value = ed.description || "";
+      descInput.addEventListener("input", () => {
+        ed.description = descInput.value;
+        refresh();
       });
       box.appendChild(this._el("label", { class: "lbl", text: t(lang, "fieldName") }));
       box.appendChild(nameInput);
@@ -3191,8 +3228,11 @@
       box.appendChild(this._el("label", { class: "lbl", text: t(lang, "fieldDescription") }));
       box.appendChild(descInput);
 
-      if (tpl.kind === "card") box.appendChild(this._renderTemplateVariables(lang, target));
+      if (tpl.kind === "card") box.appendChild(this._renderTemplateVariables(lang, target, ed));
       else box.appendChild(this._el("div", { class: "help", text: tSub(lang, "nonCardHelp", { kind: tpl.kind }) }));
+
+      box.appendChild(actions);
+      refresh();
 
       if (target.name !== this._config.template) {
         box.appendChild(this._el("div", { class: "links" }, [this._link(t(lang, "useInCard"), () => this._select(target.name))]));
@@ -3200,21 +3240,56 @@
       return box;
     }
 
-    // Variables du template : liste (✕ pour retirer) et « Rendre un réglage variable… »
-    _renderTemplateVariables(lang, target) {
+    _saveManageEdit() {
+      const lang = this._lang();
+      const edit = this._manageEdit;
+      if (!edit) return;
+      const ed = edit.ed;
+      if (!NAME_RE.test(ed.name)) {
+        this._notify(t(lang, "invalidName"), "err");
+        return;
+      }
+      const renamed = ed.name !== edit.name;
+      if (renamed && this._templateByName(ed.name) && !window.confirm(tSub(lang, "confirmOverwrite", { name: ed.name }))) return;
+      const write = () => {
+        this._run(this._writeDraft(ed), t(lang, "saved"))
+          .then(() => {
+            if (renamed && this._config.template === edit.name) this._changed(Object.assign({}, this._config, { template: ed.name }));
+            this._manageEdit = null;
+            this._manageOpen = ed.name;
+            this._usage = null;
+            this._render();
+          })
+          .catch(function () {});
+      };
+      if (!renamed) {
+        write();
+        return;
+      }
+      // renommer casse les autres cartes qui utilisent l'ancien nom : confirmer
+      countTemplateUsages(this._hass, edit.name)
+        .then(
+          (usage) => tSub(lang, "usageCount", usage),
+          () => t(lang, "usageUnknown")
+        )
+        .then((usage) => {
+          if (window.confirm(tSub(lang, "confirmRename", { old: edit.name, name: ed.name, usage: usage }))) write();
+        });
+    }
+
+    // Variables du template : liste (✕ pour retirer) et « Rendre un réglage variable… »,
+    // appliquées au brouillon (enregistrées avec Enregistrer)
+    _renderTemplateVariables(lang, target, ed) {
       const box = this._el("div");
-      const given = target.name === this._config.template ? this._config.variables : {};
-      const ed = draftFromTemplate(target.name, target.found, given);
       box.appendChild(this._el("div", { class: "help", text: t(lang, "templateVarsHelp") }));
       const chips = this._el("div", { class: "chips" });
       ed.vars.forEach((v) => {
         const remove = this._el("button", { type: "button", title: tSub(lang, "removeVar", { name: v.name }), text: "✕" });
         remove.addEventListener("click", () => {
-          this._updateTemplate(function (draft) {
-            draft.vars = draft.vars.filter(function (x) {
-              return !samePath(x.path, v.path);
-            });
-          }, null, target.name);
+          ed.vars = ed.vars.filter(function (x) {
+            return !samePath(x.path, v.path);
+          });
+          this._renderManagePopup();
         });
         chips.appendChild(this._el("span", { class: "chip" }, [v.name + " ", this._el("code", { text: v.path.join(".") }), remove]));
       });
@@ -3237,10 +3312,9 @@
         pick.addEventListener("change", () => {
           if (pick.value === "") return;
           const leaf = candidates[Number(pick.value)];
-          this._updateTemplate(function (draft) {
-            const taken = draft.vars.map((x) => x.name).concat(Object.keys(draft.extraDefaults));
-            draft.vars.push({ name: suggestVarName(leaf.path, taken), path: leaf.path, label: "" });
-          }, null, target.name);
+          const taken = ed.vars.map((x) => x.name).concat(Object.keys(ed.extraDefaults));
+          ed.vars.push({ name: suggestVarName(leaf.path, taken), path: leaf.path, label: "" });
+          this._renderManagePopup();
         });
         box.appendChild(pick);
       }
@@ -3681,6 +3755,7 @@
 
     _move(name, scope) {
       const lang = this._lang();
+      this._manageEdit = null;
       const current = this._templateByName(name);
       if (!current) return;
       const given = name === this._config.template ? this._config.variables : {};

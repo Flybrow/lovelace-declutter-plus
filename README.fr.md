@@ -103,8 +103,10 @@ Dès qu'un template est choisi, ou qu'un nom valide est saisi sur l'écran de
 création, l'aperçu à droite contient **Ajouter une carte**, **Importer une
 section** et la barre d'édition de chaque carte. Sur les écrans d'accueil, de
 choix et de gestion, rien n'y est proposé et le bouton **Enregistrer** de Home
-Assistant est masqué : ces écrans font office de menu. Les modifications d'un template (ses
-cartes, son nom, sa description, ses variables) sont enregistrées immédiatement ;
+Assistant est masqué : ces écrans font office de menu. Les modifications des cartes d'un template
+sont enregistrées immédiatement ; dans *Gérer les templates*, le nom, la
+description et les variables s'enregistrent avec le bouton **Enregistrer**, qui
+apparaît quand une valeur a changé ;
 le bouton *Enregistrer* de Home Assistant enregistre cette carte (choix du
 template et valeurs des variables).
 

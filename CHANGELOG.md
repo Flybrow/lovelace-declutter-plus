@@ -39,7 +39,8 @@
 - **Manage templates**, in a pop-up above the card editor: every template with
   its preview, number of cards and uses;
   rename (with a warning for other cards), description, variables, delete
-  (with confirmation).
+  (with confirmation). Changes are kept as a draft and written with a **Save**
+  button, shown only when a value has changed.
 - Variables are collapsed by default and marked *(optional)*, on the card and in
   *Manage templates*.
 

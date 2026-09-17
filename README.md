@@ -93,8 +93,9 @@ Once a template is chosen, or a valid name is entered on the New template
 screen, the preview on the right holds **Add card**, **Import a section** and
 the edit toolbar of each card. On the home, choose and manage screens, nothing
 is offered there and Home Assistant's **Save** button is hidden: they act like a
-menu. Changes to a template (its cards, name,
-description, variables) are saved immediately; the *Save* button of Home Assistant
+menu. Changes to a template's cards are saved immediately; in *Manage templates*,
+name, description and variables are saved with the **Save** button that appears
+when a value has changed; the *Save* button of Home Assistant
 saves this card (template choice and variable values).
 
 ### Deleting

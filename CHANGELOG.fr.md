@@ -43,7 +43,9 @@
   **Gérer les templates**.
 - **Gérer les templates**, dans une popup au-dessus de l'éditeur de la carte :
   tous les templates avec leur aperçu, leur nombre de cartes et d'utilisations ; renommer (avec avertissement pour les autres cartes),
-  description, variables, supprimer (avec confirmation).
+  description, variables, supprimer (avec confirmation). Les modifications
+  restent en brouillon et s'enregistrent avec un bouton **Enregistrer**, affiché
+  seulement quand une valeur a changé.
 - Les variables sont repliées par défaut et marquées *(facultatif)*, sur la carte
   et dans *Gérer les templates*.
 
