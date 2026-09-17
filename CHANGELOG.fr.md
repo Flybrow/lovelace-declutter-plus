@@ -25,9 +25,14 @@
   templates**. L'aperçu ne propose ni *Ajouter une carte* ni *Importer une
   section* tant qu'aucun template n'est choisi ou créé.
 - **Écran de création** : nom, description, stockage, et comment remplir le
-  template (ajouter ou coller des cartes, importer une section avec ses
-  conteneurs, modifier depuis n'importe quelle page où le template est utilisé).
-  Coller une carte copiée ouvre cet écran avec la carte comme première carte.
+  template. Dès que le nom est valide, des cartes s'ajoutent depuis l'aperçu
+  (*Ajouter une carte*, *Importer une section*) ; la première carte crée le
+  template. Pas de bouton de création séparé : le bouton **Enregistrer** de Home
+  Assistant crée le template (même vide) et enregistre la carte. Coller une carte
+  copiée ouvre cet écran avec la carte comme première carte.
+- Le bouton **Enregistrer** de Home Assistant est masqué tant que la carte n'a pas
+  de template (accueil, choix, gestion, nom pas encore valide) : ces écrans font
+  office de menu.
 - **Cette carte** : une carte existante n'affiche que le template qu'elle
   utilise et ses propres valeurs de variables, avec un bouton **Gérer mes
   templates** à côté du nom du template, et les liens **Changer de template** /
@@ -64,7 +69,9 @@
   change pas.
 - À l'ouverture de l'éditeur, le plugin relit son fichier en contournant le
   cache : si un build plus récent existe, il propose **Recharger**. Un lien
-  **Recharger sans cache** est toujours disponible en bas de l'éditeur.
+  **Recharger sans cache** est toujours disponible en bas de l'éditeur. Le
+  rechargement retire aussi le fichier des caches du service worker ; sur certains
+  appareils (application mobile), vider le cache de l'app peut rester nécessaire.
 
 ### Documentation
 

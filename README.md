@@ -63,10 +63,11 @@ version does the same at any time.
 1. Edit a dashboard › *Add card* › **Declutter Plus**. The home screen explains
    the plugin and offers two choices.
 2. **Create a template**: give it a name (letters, digits, `_`, `-`), an optional
-   description and a storage (*Shared* by default), then **Create template**.
-3. Fill it from the preview on the right: **Add card** (card picker) or
-   **Import a section** (every card and container of a section). Edit a card
-   with its edit button; saving updates the template.
+   description and a storage (*Shared* by default).
+3. As soon as the name is valid, fill it from the preview on the right: **Add
+   card** (card picker) or **Import a section** (every card and container of a
+   section). Click **Save** to finish: it creates the template, even empty, and
+   saves the card. Edit a card later with its edit button in the preview.
 4. Reuse it: add another Declutter Plus card and choose **Use an existing
    template**.
 
@@ -82,14 +83,16 @@ original cards yourself if you only want to keep the Declutter Plus version.
 | Screen | When | What |
 | --- | --- | --- |
 | Home | new card | explanations, **Create a template**, **Use an existing template**, **Manage templates**; offers to copy decluttering-card templates or 1.x templates when found |
-| New template | from Home | name, description, storage, how to fill the template |
+| New template | from Home | name, description, storage, how to fill the template; cards are added from the preview and **Save** creates the template |
 | Choose a template | from Home or **Change template** | gallery with thumbnails and search |
 | This card | existing card | the template used, a **Manage my templates** button, and **this card's variable values only** (collapsed *Variables (optional)* block); **Change template**, **Manage templates** |
 | Manage templates | from Home or This card | every template with its number of cards and uses: rename, storage, description, variables, delete |
 
-Once a template is chosen or created, the preview on the right holds **Add
-card**, **Import a section** and the edit toolbar of each card (nothing is
-offered there on the home screen). Changes to a template (its cards, name,
+Once a template is chosen, or a valid name is entered on the New template
+screen, the preview on the right holds **Add card**, **Import a section** and
+the edit toolbar of each card. On the home, choose and manage screens, nothing
+is offered there and Home Assistant's **Save** button is hidden: they act like a
+menu. Changes to a template (its cards, name,
 storage, variables) are saved immediately; the *Save* button of Home Assistant
 saves this card (template choice and variable values).
 

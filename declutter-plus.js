@@ -8,7 +8,7 @@
 
   const VERSION = "2.0.0";
   // repère de build, changé à chaque publication d'une même version (cache navigateur)
-  const BUILD = "2026-09-17.3";
+  const BUILD = "2026-09-17.4";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -43,6 +43,7 @@
   const DIRTY_TICKS = 40;
   const DIRTY_TICK_MS = 50;
   const DIRTY_MARKER = "__declutter_plus_saved";
+  const SAVE_HIDE_ID = "declutter-plus-hide-save";
   const CLOSE_TIMEOUT_MS = 1500;
   const FALLBACK_LANG = "en";
 
@@ -82,13 +83,12 @@
       cancel: "Cancel",
       createTitle: "New template",
       namePlaceholder: "living_room_menu",
+      nameNeeded: "Enter a name to add cards from the preview.",
       nameHint: "Letters, digits, _ and - only. Cards use this name to find the template.",
       nameTaken: "A template named \"{name}\" already exists.",
       createHelpTitle: "How to fill it",
-      createHelp: "Once created, fill the template from the preview on the right: \"Add card\" opens Home Assistant's card picker, \"Import a section\" copies every card and container of a section, and a card copied from its menu can be added with \"Declutter Plus: paste copied card\". Original cards are not changed. You can then edit this template from any page where a card uses it: changes apply everywhere.",
+      createHelp: "Add cards from the preview on the right: \"Add card\" opens Home Assistant's card picker and \"Import a section\" copies every card and container of a section; a card copied from its menu can also be added with \"Declutter Plus: paste copied card\". Original cards are not changed. Click Save to create the template. You can then edit it from any page where a card uses it: changes apply everywhere.",
       pasteIntoCreate: "The copied card will be the first card of the template.",
-      createButton: "Create template",
-      created: "Template \"{name}\" created. Add cards from the preview.",
       pickTitle: "Choose a template",
       manageTitle: "Manage templates",
       manageHelp: "Changes apply to every Declutter Plus card using the template.",
@@ -194,13 +194,12 @@
       cancel: "Annuler",
       createTitle: "Nouveau template",
       namePlaceholder: "menu_salon",
+      nameNeeded: "Saisissez un nom pour ajouter des cartes depuis l'aperçu.",
       nameHint: "Lettres, chiffres, _ et - uniquement. Les cartes retrouvent le template grâce à ce nom.",
       nameTaken: "Un template nommé « {name} » existe déjà.",
       createHelpTitle: "Comment le remplir",
-      createHelp: "Une fois créé, remplissez le template depuis l'aperçu à droite : « Ajouter une carte » ouvre le sélecteur de cartes de Home Assistant, « Importer une section » copie toutes les cartes et conteneurs d'une section, et une carte copiée depuis son menu s'ajoute avec « Declutter Plus : coller la carte copiée ». Les cartes d'origine ne sont pas modifiées. Vous pourrez ensuite modifier ce template depuis n'importe quelle page où une carte l'utilise : les changements s'appliquent partout.",
+      createHelp: "Ajoutez des cartes depuis l'aperçu à droite : « Ajouter une carte » ouvre le sélecteur de cartes de Home Assistant et « Importer une section » copie toutes les cartes et conteneurs d'une section ; une carte copiée depuis son menu s'ajoute aussi avec « Declutter Plus : coller la carte copiée ». Les cartes d'origine ne sont pas modifiées. Cliquez sur Enregistrer pour créer le template. Vous pourrez ensuite le modifier depuis n'importe quelle page où une carte l'utilise : les changements s'appliquent partout.",
       pasteIntoCreate: "La carte copiée sera la première carte du template.",
-      createButton: "Créer le template",
-      created: "Template « {name} » créé. Ajoutez des cartes depuis l'aperçu.",
       pickTitle: "Choisir un template",
       manageTitle: "Gérer les templates",
       manageHelp: "Les modifications s'appliquent à toutes les cartes Declutter Plus qui utilisent le template.",
@@ -672,10 +671,49 @@
     return updateCheck;
   }
 
+  // Retire le fichier des caches du service worker de Home Assistant (Cache Storage),
+  // avec et sans paramètres d'adresse, puis le relit hors cache HTTP et recharge.
+  function clearWorkerCaches(url) {
+    if (typeof caches === "undefined" || !caches.keys) return Promise.resolve();
+    const path = url.split("?")[0].split("#")[0];
+    return caches
+      .keys()
+      .then(function (names) {
+        return Promise.all(
+          names.map(function (name) {
+            return caches.open(name).then(function (cache) {
+              return cache.keys().then(function (requests) {
+                return Promise.all(
+                  requests
+                    .filter(function (request) {
+                      return request.url.split("?")[0].split("#")[0] === path;
+                    })
+                    .map(function (request) {
+                      return cache.delete(request);
+                    })
+                );
+              });
+            });
+          })
+        );
+      })
+      .catch(function () {});
+  }
+
   function reloadWithoutCache() {
     const url = scriptUrl();
-    const refresh = url && typeof fetch === "function" ? fetch(url, { cache: "reload" }).catch(function () {}) : Promise.resolve();
-    refresh.then(function () {
+    let chain = Promise.resolve();
+    if (url && typeof fetch === "function") {
+      const path = url.split("?")[0];
+      chain = clearWorkerCaches(url).then(function () {
+        return Promise.all(
+          [url, path].map(function (target) {
+            return fetch(target, { cache: "reload" }).catch(function () {});
+          })
+        );
+      });
+    }
+    chain.then(function () {
       location.reload();
     });
   }
@@ -1868,7 +1906,17 @@
   // ---------------------------------------------------------------------------
   // Canal aperçu -> éditeur
 
-  const previewBus = { editors: [] };
+  // pendingDraft : template en cours de création (nom, description, stockage),
+  // créé à la première carte ajoutée ou au clic sur Enregistrer de Home Assistant.
+  const previewBus = { editors: [], pendingDraft: null };
+
+  function setPendingDraft(draft) {
+    previewBus.pendingDraft = draft;
+    liveCards.forEach(function (card) {
+      card._signature = null;
+      card._build();
+    });
+  }
 
   function previewAction(action, payload) {
     const editors = previewBus.editors;
@@ -2053,6 +2101,15 @@
       const found = allTemplates(entry, lovelace && lovelace.config)[name];
       const tpl = found && normalizeTemplate(found.raw);
       if (!tpl) {
+        const pending = previewBus.pendingDraft;
+        if (this._editable() && pending && pending.name === name) {
+          if (isObject(this._config.paste)) this._show({ config: this._config.paste, grid_options: null }, lang, "add");
+          else {
+            this._clear();
+            this._syncAddButton(lang, "add");
+          }
+          return;
+        }
         this._showError(tSub(lang, "templateNotFound", { name: name }));
         this._syncAddButton(lang, null);
         return;
@@ -2348,6 +2405,7 @@
     .notice.err { color:var(--error-color); }
     .notice.ok { color:var(--success-color, #43a047); }
     .help { font-size:13px; color:var(--secondary-text-color); margin:4px 0 8px; line-height:1.45; }
+    .help.err { color:var(--error-color); }
     input.text, select.text { box-sizing:border-box; width:100%; font:inherit; padding:9px 10px; border-radius:8px;
       border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
     label.lbl { display:block; font-size:12px; color:var(--secondary-text-color); margin:12px 0 4px; }
@@ -2457,6 +2515,11 @@
     }
 
     setConfig(config) {
+      if (this._built && this._draftCreate && !this._templateByName(config.template)) {
+        // saisie du nom en cours : ne pas redessiner (perte du focus)
+        this._config = Object.assign({}, config);
+        return;
+      }
       const templateChanged = !this._built || this._config.template !== config.template || !!this._config.paste !== !!config.paste;
       this._config = Object.assign({}, config);
       if (templateChanged) {
@@ -2503,6 +2566,7 @@
 
     disconnectedCallback() {
       this._entry().listeners.delete(this._onLibrary);
+      this._syncSaveButton(false);
       const i = previewBus.editors.indexOf(this);
       if (i !== -1) previewBus.editors.splice(i, 1);
     }
@@ -2591,6 +2655,8 @@
 
     _currentView() {
       if (this._view) return this._view;
+      const pending = previewBus.pendingDraft;
+      if (this._draftCreate && pending && this._config.template === pending.name && !this._current()) return VIEW_CREATE;
       if (this._config.template) return VIEW_CARD;
       if (this._config.paste) return VIEW_CREATE;
       return VIEW_HOME;
@@ -2620,6 +2686,7 @@
       }
       this._renderDeclutteringOffer(root, lang);
       const view = this._currentView();
+      this._syncSaveButton();
       if (view === VIEW_CARD) root.appendChild(this._renderCard(lang));
       else if (view === VIEW_CREATE) root.appendChild(this._renderCreate(lang));
       else if (view === VIEW_PICK) root.appendChild(this._renderPick(lang));
@@ -2645,7 +2712,17 @@
     }
 
     _backLink(lang) {
-      const back = this._link("← " + t(lang, "back"), () => this._go(null));
+      const back = this._link("← " + t(lang, "back"), () => {
+        if (this._draftCreate) {
+          this._draftCreate = null;
+          setPendingDraft(null);
+          if (this._config.template && !this._templateByName(this._config.template)) {
+            this._view = null;
+            this._changed(Object.assign({}, this._config, { template: "" }));
+          }
+        }
+        this._go(null);
+      });
       back.classList.add("back");
       return back;
     }
@@ -2700,21 +2777,34 @@
 
       const draft = this._draftCreate || { name: "", description: "", scope: this._defaultScope() };
       this._draftCreate = draft;
+      this._hookSave();
 
       const nameInput = this._el("input", { class: "text", placeholder: t(lang, "namePlaceholder") });
       nameInput.value = draft.name;
-      nameInput.addEventListener("input", function () {
+      const nameState = this._el("div", { class: "help" });
+      const syncName = () => {
+        if (this._draftCreate !== draft) return; // création terminée ou abandonnée
         draft.name = nameInput.value.trim();
-      });
+        let error = null;
+        if (!draft.name) error = t(lang, "nameNeeded");
+        else if (!NAME_RE.test(draft.name)) error = t(lang, "invalidName");
+        else if (this._templateByName(draft.name)) error = tSub(lang, "nameTaken", { name: draft.name });
+        nameState.textContent = error || t(lang, "nameHint");
+        nameState.classList.toggle("err", !!error && !!draft.name);
+        this._updatePendingDraft(error ? null : draft);
+      };
+      nameInput.addEventListener("input", syncName);
       box.appendChild(this._el("label", { class: "lbl", text: t(lang, "fieldName") }));
       box.appendChild(nameInput);
-      box.appendChild(this._el("div", { class: "help", text: t(lang, "nameHint") }));
+      box.appendChild(nameState);
 
       const descInput = this._el("input", { class: "text" });
       descInput.value = draft.description;
       descInput.addEventListener("input", function () {
         draft.description = descInput.value;
       });
+      // état initial du nom (message, aperçu) une fois les champs posés
+      setTimeout(syncName, 0);
       box.appendChild(this._el("label", { class: "lbl", text: t(lang, "fieldDescription") }));
       box.appendChild(descInput);
 
@@ -2730,21 +2820,84 @@
       box.appendChild(
         this._el("div", { class: "box" }, [this._el("h4", { text: t(lang, "createHelpTitle") }), this._el("div", { class: "help", text: t(lang, "createHelp") })])
       );
-
-      const actions = this._el("div", { class: "actions" });
-      if (!this._config.paste) {
-        const cancel = this._el("button", { class: "action", type: "button", text: haLabel(this._hass, "ui.common.cancel", lang, "cancel") });
-        cancel.addEventListener("click", () => {
-          this._draftCreate = null;
-          this._go(null);
-        });
-        actions.appendChild(cancel);
-      }
-      const create = this._el("button", { class: "action primary", type: "button", text: t(lang, "createButton") });
-      create.addEventListener("click", () => this._createTemplate(draft));
-      actions.appendChild(create);
-      box.appendChild(actions);
       return box;
+    }
+
+    // Sans template (accueil, choix, gestion, nom pas encore valide), le bouton
+    // Enregistrer de la popup de Home Assistant n'a pas de sens : on le masque.
+    _syncSaveButton(hide) {
+      if (hide === undefined) hide = !this._config.template;
+      const dialog = activeEditDialog();
+      const root = dialog && dialog.shadowRoot;
+      if (!root) return;
+      let style = root.getElementById(SAVE_HIDE_ID);
+      if (hide && !style) {
+        style = document.createElement("style");
+        style.id = SAVE_HIDE_ID;
+        style.textContent = 'ha-dialog-footer ha-button[slot="primaryAction"]{display:none !important}';
+        root.appendChild(style);
+      } else if (!hide && style) {
+        style.remove();
+      }
+    }
+
+    // Nom valide : la carte pointe vers le futur template (Enregistrer devient actif)
+    // et l'aperçu propose d'ajouter des cartes. Nom invalide : on revient à vide.
+    _updatePendingDraft(draft) {
+      const name = draft ? draft.name : "";
+      // brouillon partagé par référence : description et stockage restent à jour
+      if (draft) draft.paste = this._config.paste || null;
+      setPendingDraft(draft || null);
+      if ((this._config.template || "") === name) return;
+      const next = Object.assign({}, this._config, { template: name });
+      delete next.variables;
+      this._changed(next);
+      this._syncSaveButton();
+    }
+
+    // Enregistrer (Home Assistant) crée le template en cours s'il n'existe pas encore.
+    _hookSave() {
+      const dialog = activeEditDialog();
+      const params = dialog && dialog._params;
+      if (!params || typeof params.saveCardConfig !== "function" || params.saveCardConfig.__declutterPlus) return;
+      const original = params.saveCardConfig;
+      const editor = this;
+      const hooked = function (cardConfig) {
+        const args = arguments;
+        const self = this;
+        const pending = previewBus.pendingDraft;
+        const name = cardConfig && cardConfig.template;
+        if (!pending || name !== pending.name || editor._templateByName(name)) return original.apply(self, args);
+        return editor._createFromDraft(pending, []).then(function () {
+          return original.apply(self, args);
+        });
+      };
+      hooked.__declutterPlus = true;
+      try {
+        params.saveCardConfig = hooked;
+      } catch (e) {}
+    }
+
+    // Crée le template en cours avec des cartes (carte collée en premier).
+    _createFromDraft(pending, cards) {
+      const list = (isObject(pending.paste) ? [pending.paste] : []).concat(cards);
+      const ed = {
+        originalName: null,
+        originScope: null,
+        name: pending.name,
+        description: pending.description || "",
+        kind: "card",
+        scope: pending.scope,
+        card: { type: GRID_TYPE, cards: list.map(cleanCard) },
+        vars: [],
+        extraDefaults: {},
+        fields: {},
+        grid_options: null
+      };
+      return this._writeDraft(ed).then(function () {
+        setPendingDraft(null);
+        return ed;
+      });
     }
 
     _scopeHelp(lang, scope) {
@@ -2762,44 +2915,6 @@
       });
       select.addEventListener("change", () => onChange(select.value));
       return select;
-    }
-
-    _createTemplate(draft) {
-      const lang = this._lang();
-      const name = draft.name;
-      if (!NAME_RE.test(name)) {
-        this._notify(t(lang, "invalidName"), "err");
-        return;
-      }
-      if (hasVar(this._templates(), name)) {
-        this._notify(tSub(lang, "nameTaken", { name: name }), "err");
-        return;
-      }
-      const paste = this._config.paste;
-      const ed = {
-        originalName: null,
-        originScope: null,
-        name: name,
-        description: draft.description,
-        kind: "card",
-        scope: draft.scope,
-        card: { type: GRID_TYPE, cards: isObject(paste) ? [cleanCard(paste)] : [] },
-        vars: [],
-        extraDefaults: {},
-        fields: {},
-        grid_options: null
-      };
-      this._run(this._writeDraft(ed), tSub(lang, "created", { name: name }))
-        .then(() => {
-          this._draftCreate = null;
-          this._view = null;
-          const next = Object.assign({}, this._config, { template: name });
-          delete next.paste;
-          delete next.variables;
-          this._changed(next);
-          this._render();
-        })
-        .catch(function () {});
     }
 
     // --- Choix d'un template existant
@@ -3509,6 +3624,24 @@
         }).then(this._dialogFailed.bind(this));
         return;
       }
+      const pending = previewBus.pendingDraft;
+      if (pending && pending.name === this._config.template) {
+        openNativeCardDialog({
+          hass: this._hass,
+          mode: "add",
+          ownConfig: ownConfig,
+          onSave: function (card) {
+            return editor._createFromDraft(pending, [card]).then(function () {
+              const next = Object.assign({}, ownConfig, { template: pending.name });
+              delete next.paste;
+              return next;
+            }, function (err) {
+              throw new Error(errorText(lang, err));
+            });
+          }
+        }).then(this._dialogFailed.bind(this));
+        return;
+      }
       openNativeCardDialog({
         hass: this._hass,
         mode: "add",
@@ -3679,6 +3812,21 @@
       const lang = this._lang();
       const current = this._current();
       const cards = section.cards.map(clone);
+      const pending = previewBus.pendingDraft;
+      if (!current && pending && pending.name === this._config.template) {
+        // la création se termine ici : ne plus revenir sur l'écran de création
+        this._draftCreate = null;
+        this._view = null;
+        this._run(this._createFromDraft(pending, cards), tSub(lang, "imported", { count: cards.length }))
+          .then(() => {
+            const next = Object.assign({}, this._config, { template: pending.name });
+            delete next.paste;
+            this._changed(next);
+            this._render();
+          })
+          .catch(function () {});
+        return;
+      }
       let ed;
       const isNew = !current || normalizeTemplate(current.found.raw).kind !== "card";
       if (!isNew) {

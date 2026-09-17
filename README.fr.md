@@ -71,12 +71,12 @@ vérifie s'il existe un fichier plus récent et propose **Recharger** ; le lien
 1. Modifier un dashboard › *Ajouter une carte* › **Declutter Plus**. L'écran
    d'accueil présente le plugin et propose deux choix.
 2. **Créer un template** : lui donner un nom (lettres, chiffres, `_`, `-`), une
-   description facultative et un stockage (*Partagé* par défaut), puis
-   **Créer le template**.
-3. Le remplir depuis l'aperçu à droite : **Ajouter une carte** (sélecteur de
-   cartes) ou **Importer une section** (toutes les cartes et conteneurs d'une
-   section). Modifier une carte avec son bouton d'édition ; l'enregistrement met
-   à jour le template.
+   description facultative et un stockage (*Partagé* par défaut).
+3. Dès que le nom est valide, le remplir depuis l'aperçu à droite : **Ajouter une
+   carte** (sélecteur de cartes) ou **Importer une section** (toutes les cartes et
+   conteneurs d'une section). Cliquer sur **Enregistrer** pour terminer : le
+   template est créé, même vide, et la carte enregistrée. Modifier ensuite une
+   carte avec son bouton d'édition dans l'aperçu.
 4. Le réutiliser : ajouter une autre carte Declutter Plus et choisir
    **Utiliser un template existant**.
 
@@ -94,14 +94,16 @@ Declutter Plus.
 | Écran | Quand | Contenu |
 | --- | --- | --- |
 | Accueil | nouvelle carte | explications, **Créer un template**, **Utiliser un template existant**, **Gérer les templates** ; propose de copier les templates decluttering-card ou 1.x trouvés |
-| Nouveau template | depuis l'accueil | nom, description, stockage, comment remplir le template |
+| Nouveau template | depuis l'accueil | nom, description, stockage, comment remplir le template ; les cartes s'ajoutent depuis l'aperçu et **Enregistrer** crée le template |
 | Choisir un template | depuis l'accueil ou **Changer de template** | galerie avec miniatures et recherche |
 | Cette carte | carte existante | le template utilisé, un bouton **Gérer mes templates**, et **uniquement les valeurs des variables de cette carte** (bloc *Variables (facultatif)* replié) ; **Changer de template**, **Gérer les templates** |
 | Gérer les templates | depuis l'accueil ou Cette carte | tous les templates avec leur nombre de cartes et d'utilisations : renommer, stockage, description, variables, supprimer |
 
-Dès qu'un template est choisi ou créé, l'aperçu à droite contient **Ajouter une
-carte**, **Importer une section** et la barre d'édition de chaque carte (rien
-n'y est proposé sur l'écran d'accueil). Les modifications d'un template (ses
+Dès qu'un template est choisi, ou qu'un nom valide est saisi sur l'écran de
+création, l'aperçu à droite contient **Ajouter une carte**, **Importer une
+section** et la barre d'édition de chaque carte. Sur les écrans d'accueil, de
+choix et de gestion, rien n'y est proposé et le bouton **Enregistrer** de Home
+Assistant est masqué : ces écrans font office de menu. Les modifications d'un template (ses
 cartes, son nom, son stockage, ses variables) sont enregistrées immédiatement ;
 le bouton *Enregistrer* de Home Assistant enregistre cette carte (choix du
 template et valeurs des variables).

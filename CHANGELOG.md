@@ -22,9 +22,13 @@
   **Use an existing template**, **Manage templates**. The preview offers no
   *Add card* or *Import a section* until a template is chosen or created.
 - **New template screen**: name, description, storage, and how to fill the
-  template (add or paste cards, import a section with its containers, edit from
-  any page where the template is used). Pasting a copied card opens this screen
-  with the card as first card.
+  template. As soon as the name is valid, cards can be added from the preview
+  (*Add card*, *Import a section*); the first card creates the template. There
+  is no separate create button: Home Assistant's **Save** creates the template
+  (even empty) and saves the card. Pasting a copied card opens this screen with
+  the card as first card.
+- Home Assistant's **Save** button is hidden while the card has no template
+  (home, choose, manage, name not valid yet): these screens act like a menu.
 - **This card**: an existing card only shows the template it uses and its own
   variable values, with a **Manage my templates** button next to the template
   name, and **Change template** / **Manage templates** links.
@@ -57,7 +61,9 @@
   console), to check which file is loaded when the version does not change.
 - When the editor opens, the plugin re-reads its file bypassing the cache: if a
   newer build exists, it offers **Reload**. A **Reload without cache** link is
-  always available at the bottom of the editor.
+  always available at the bottom of the editor. Reloading also removes the file
+  from the service worker caches; on some devices (mobile app) clearing the app
+  cache may still be needed.
 
 ### Documentation
 
