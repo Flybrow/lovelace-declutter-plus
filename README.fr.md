@@ -30,11 +30,11 @@ moderne et graphique de [decluttering-card](https://github.com/custom-cards/decl
 - **Plusieurs cartes par template**, côte à côte sur une grille de 12 colonnes
   comme une section. La largeur se règle dans l'onglet *Mise en page* de
   l'éditeur de chaque carte.
-- Écran **Gérer les templates** : renommer, changer le stockage, variables,
+- Écran **Gérer les templates** : renommer, description, variables,
   supprimer, avec le nombre de cartes qui utilisent chaque template.
-- **Templates partagés stockés dans les données système de Home Assistant** :
-  plus de dashboard caché, inclus dans les sauvegardes Home Assistant, avec en
-  plus une sauvegarde automatique.
+- **Templates stockés dans les données système de Home Assistant** :
+  utilisables sur tous les dashboards, plus de dashboard caché, inclus dans les
+  sauvegardes Home Assistant, avec en plus une sauvegarde automatique.
 - **Variables facultatives** avec de vrais sélecteurs (entité, icône, pièce…),
   pour réutiliser un template avec des valeurs différentes.
 - **Pop-ups Bubble Card** masquées jusqu'à leur ouverture. Dans l'éditeur
@@ -70,8 +70,8 @@ vérifie s'il existe un fichier plus récent et propose **Recharger** ; le lien
 
 1. Modifier un dashboard › *Ajouter une carte* › **Declutter Plus**. L'écran
    d'accueil présente le plugin et propose deux choix.
-2. **Créer un template** : lui donner un nom (lettres, chiffres, `_`, `-`), une
-   description facultative et un stockage (*Partagé* par défaut).
+2. **Créer un template** : lui donner un nom (lettres, chiffres, `_`, `-`) et une
+   description facultative.
 3. Dès que le nom est valide, le remplir depuis l'aperçu à droite : **Ajouter une
    carte** (sélecteur de cartes) ou **Importer une section** (toutes les cartes et
    conteneurs d'une section). Cliquer sur **Enregistrer** pour terminer : le
@@ -94,17 +94,17 @@ Declutter Plus.
 | Écran | Quand | Contenu |
 | --- | --- | --- |
 | Accueil | nouvelle carte | explications, **Créer un template**, **Utiliser un template existant**, **Gérer les templates** ; propose de copier les templates decluttering-card ou 1.x trouvés |
-| Nouveau template | depuis l'accueil | nom, description, stockage, comment remplir le template ; les cartes s'ajoutent depuis l'aperçu et **Enregistrer** crée le template |
+| Nouveau template | depuis l'accueil | nom, description, comment remplir le template ; les cartes s'ajoutent depuis l'aperçu et **Enregistrer** crée le template |
 | Choisir un template | depuis l'accueil ou **Changer de template** | galerie avec miniatures et recherche |
 | Cette carte | carte existante | le template utilisé, un bouton **Gérer mes templates**, et **uniquement les valeurs des variables de cette carte** (bloc *Variables (facultatif)* replié) ; **Changer de template**, **Gérer les templates** |
-| Gérer les templates | depuis l'accueil ou Cette carte | tous les templates avec leur nombre de cartes et d'utilisations : renommer, stockage, description, variables, supprimer |
+| Gérer les templates | depuis l'accueil ou Cette carte | tous les templates avec leur nombre de cartes et d'utilisations : renommer, description, variables, supprimer ; **Déplacer vers le stockage système** pour les templates encore stockés dans un dashboard |
 
 Dès qu'un template est choisi, ou qu'un nom valide est saisi sur l'écran de
 création, l'aperçu à droite contient **Ajouter une carte**, **Importer une
 section** et la barre d'édition de chaque carte. Sur les écrans d'accueil, de
 choix et de gestion, rien n'y est proposé et le bouton **Enregistrer** de Home
 Assistant est masqué : ces écrans font office de menu. Les modifications d'un template (ses
-cartes, son nom, son stockage, ses variables) sont enregistrées immédiatement ;
+cartes, son nom, sa description, ses variables) sont enregistrées immédiatement ;
 le bouton *Enregistrer* de Home Assistant enregistre cette carte (choix du
 template et valeurs des variables).
 
@@ -135,38 +135,32 @@ changent.
 
 ## Stockage des templates
 
-| Stockage | Où il est enregistré | Utilisable sur |
-| --- | --- | --- |
-| **Partagé** (par défaut) | les données système de Home Assistant (`.storage/frontend.system_data`) | tous les dashboards |
-| **Ce dashboard** | la configuration du dashboard courant | ce dashboard seulement |
+Les templates sont stockés dans les **données système de Home Assistant**
+(`.storage/frontend.system_data`) : utilisables sur tous les dashboards, lus une
+fois au chargement de la page puis mis à jour en direct, et inclus dans les
+sauvegardes Home Assistant. Il n'y a pas de stockage à choisir.
 
-- **Partagé est le choix le plus simple.** Aucun dashboard n'est nécessaire : les
-  templates sont lus une fois au chargement de la page puis mis à jour en direct,
-  et ils sont inclus dans les sauvegardes Home Assistant. Choisir *Ce dashboard*
-  seulement pour que les templates suivent la configuration de ce dashboard.
-- Changer le stockage d'un template le déplace. Si les deux stockages
-  contiennent un template du même nom, celui du dashboard courant est
-  prioritaire.
-- Les templates partagés sont aussi **sauvegardés automatiquement** dans les
-  données utilisateur de l'administrateur ; s'ils étaient effacés, l'éditeur
-  propose **Restaurer les templates**.
-- Supprimer un dashboard qui stocke des templates (*Ce dashboard*) demande
-  confirmation, dans un onglet où Declutter Plus est chargé.
-- Un dashboard en mode YAML ne peut pas être modifié depuis l'interface :
-  utiliser le stockage partagé.
+- Les templates sont aussi **sauvegardés automatiquement** dans les données
+  utilisateur de l'administrateur ; s'ils étaient effacés, l'éditeur propose
+  **Restaurer les templates**.
+- **Les templates encore stockés dans un dashboard** (versions précédentes)
+  continuent de fonctionner. Dans *Gérer les templates*, **Déplacer vers le
+  stockage système** les range au bon endroit ; les modifier les déplace aussi.
+- **Les templates decluttering-card** (`decluttering_templates`) ne sont jamais
+  modifiés : les déplacer ou les modifier les copie dans le stockage système, et
+  la copie est ensuite utilisée.
 
 ### Mise à jour depuis la 1.x
 
-Les versions 1.x stockaient les templates partagés dans un dashboard caché. Rien
-n'est converti automatiquement : ces templates continuent de fonctionner depuis
-ce dashboard (et restent modifiables) aussi longtemps que vous le souhaitez.
+Les versions 1.x stockaient les templates dans un dashboard caché. Rien n'est
+converti automatiquement : ces templates continuent de fonctionner depuis ce
+dashboard (et restent modifiables) aussi longtemps que vous le souhaitez.
 
 Quand vous êtes prêt, l'écran d'accueil et *Gérer les templates* proposent
-**Copier vers le nouveau stockage**. Les templates sont copiés dans les données
-système de Home Assistant et l'ancien dashboard reste intact et utilisable.
-Declutter Plus 2.0 utilise ensuite le nouveau stockage ; ne supprimez l'ancien
-dashboard dans *Paramètres › Tableaux de bord* que lorsque vous n'en avez plus
-besoin.
+**Déplacer vers le nouveau stockage**. Les templates sont copiés dans les données
+système de Home Assistant, la copie est relue et vérifiée, et seulement ensuite
+l'ancien dashboard est supprimé. Si la vérification échoue, l'ancien dashboard
+est conservé et un message vous l'indique.
 
 ## Options de la carte
 

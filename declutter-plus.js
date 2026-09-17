@@ -8,7 +8,7 @@
 
   const VERSION = "2.0.0";
   // repère de build, changé à chaque publication d'une même version (cache navigateur)
-  const BUILD = "2026-09-17.4";
+  const BUILD = "2026-09-17.5";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -104,9 +104,13 @@
       changeTemplate: "Change template",
       confirmRename: "Rename template \"{old}\" to \"{name}\"? {usage}\nOther cards using the old name will show \"Template not found\" until the template is chosen again.",
       legacyFound: "{count} shared template(s) are still in the old storage dashboard (Declutter Plus 1.x). They keep working there.",
-      legacyCopyHelp: "You can copy them to Home Assistant's system data, the new storage: no hidden dashboard to maintain, updated live, included in backups. The old dashboard is left untouched and stays usable.",
-      legacyCopy: "Copy to the new storage",
-      legacyCopied: "Templates copied to the new storage: {count}. The old storage dashboard is kept as it was. You can delete it later in Settings › Dashboards if you no longer need it.",
+      legacyCopyHelp: "You can move them to Home Assistant's system data, the new storage: usable on every dashboard, updated live, included in backups. Once the copy is checked, the old storage dashboard is deleted.",
+      legacyCopy: "Move to the new storage",
+      moveToSystem: "Move to the system storage",
+      localTemplateHelp: "This template is still stored in this dashboard (older storage). Move it to the system storage to use it on every dashboard; it will be removed from this dashboard. Editing it moves it too.",
+      legacyTemplateHelp: "This template comes from decluttering-card. Moving it copies it to the system storage; the decluttering-card original is not changed.",
+      legacyNotDeleted: "Templates copied to the new storage: {count}. The old storage dashboard was kept: the copy could not be checked or the dashboard could not be deleted. You can delete it yourself in Settings › Dashboards.",
+      legacyCopied: "Templates moved to the new storage: {count}. The copy was checked and the old storage dashboard has been deleted.",
       declFound: "{count} decluttering-card template(s) found in {dashboards} dashboard(s). Copy them into Declutter Plus?",
       declHelp: "They are copied to Declutter Plus shared templates. The original decluttering-card templates and cards are not changed and keep working; delete them yourself if you wish.",
       declCopy: "Copy into Declutter Plus",
@@ -132,9 +136,7 @@
       noPreview: "No preview for {kind} templates",
       fieldName: "Template name",
       fieldDescription: "Description",
-      fieldScope: "Storage",
-      storageLocal: "Saved in this dashboard's configuration, usable on this dashboard only.",
-      storageShared: "Saved in Home Assistant's system data, usable on every dashboard (included in Home Assistant backups).",
+      storageShared: "Stored in Home Assistant's system data: usable on every dashboard and included in Home Assistant backups.",
       noVariables: "This template has no variables.",
       defaultValue: "Default: {value}",
       templateVars: "Variable settings of the template",
@@ -215,9 +217,13 @@
       changeTemplate: "Changer de template",
       confirmRename: "Renommer le template « {old} » en « {name} » ? {usage}\nLes autres cartes qui utilisent l'ancien nom afficheront « Template introuvable » jusqu'à ce que le template soit à nouveau choisi.",
       legacyFound: "{count} template(s) partagé(s) sont encore dans l'ancien dashboard de stockage (Declutter Plus 1.x). Ils continuent d'y fonctionner.",
-      legacyCopyHelp: "Vous pouvez les copier dans les données système de Home Assistant, le nouveau stockage : plus de dashboard caché à maintenir, mise à jour en direct, inclus dans les sauvegardes. L'ancien dashboard n'est pas modifié et reste utilisable.",
-      legacyCopy: "Copier vers le nouveau stockage",
-      legacyCopied: "Templates copiés dans le nouveau stockage : {count}. L'ancien dashboard de stockage est conservé tel quel. Vous pourrez le supprimer plus tard dans Paramètres › Tableaux de bord, si vous n'en avez plus besoin.",
+      legacyCopyHelp: "Vous pouvez les déplacer dans les données système de Home Assistant, le nouveau stockage : utilisables sur tous les dashboards, mis à jour en direct, inclus dans les sauvegardes. Une fois la copie vérifiée, l'ancien dashboard de stockage est supprimé.",
+      legacyCopy: "Déplacer vers le nouveau stockage",
+      moveToSystem: "Déplacer vers le stockage système",
+      localTemplateHelp: "Ce template est encore stocké dans ce dashboard (ancien stockage). Déplacez-le vers le stockage système pour l'utiliser sur tous les dashboards ; il sera retiré de ce dashboard. Le modifier le déplace aussi.",
+      legacyTemplateHelp: "Ce template vient de decluttering-card. Le déplacer le copie dans le stockage système ; l'original decluttering-card n'est pas modifié.",
+      legacyNotDeleted: "Templates copiés dans le nouveau stockage : {count}. L'ancien dashboard de stockage a été conservé : la copie n'a pas pu être vérifiée ou le dashboard n'a pas pu être supprimé. Vous pouvez le supprimer vous-même dans Paramètres › Tableaux de bord.",
+      legacyCopied: "Templates déplacés dans le nouveau stockage : {count}. La copie a été vérifiée et l'ancien dashboard de stockage a été supprimé.",
       declFound: "{count} template(s) decluttering-card trouvé(s) dans {dashboards} dashboard(s). Les copier dans Declutter Plus ?",
       declHelp: "Ils sont copiés dans les templates partagés de Declutter Plus. Les templates et cartes decluttering-card d'origine ne sont pas modifiés et continuent de fonctionner ; supprimez-les vous-même si vous le souhaitez.",
       declCopy: "Copier dans Declutter Plus",
@@ -243,9 +249,7 @@
       noPreview: "Pas d'aperçu pour un template {kind}",
       fieldName: "Nom du template",
       fieldDescription: "Description",
-      fieldScope: "Stockage",
-      storageLocal: "Enregistré dans la configuration de ce dashboard, utilisable uniquement sur ce dashboard.",
-      storageShared: "Enregistré dans les données système de Home Assistant, utilisable sur tous les dashboards (inclus dans les sauvegardes Home Assistant).",
+      storageShared: "Stocké dans les données système de Home Assistant : utilisable sur tous les dashboards et inclus dans les sauvegardes Home Assistant.",
       noVariables: "Ce template n'a pas de variable.",
       defaultValue: "Défaut : {value}",
       templateVars: "Réglages variables du template",
@@ -576,6 +580,26 @@
       } catch (e) {}
     }
     return null;
+  }
+
+  // Copie via Home Assistant (section fantôme + « ll-copy-card ») : HA garde son
+  // presse-papiers en mémoire et ne relit le stockage du navigateur qu'au chargement,
+  // une écriture directe ne serait donc visible qu'après rechargement.
+  function copyToHaClipboard(hass, card) {
+    return createProxySection(hass, [card], function () {
+      return Promise.resolve();
+    }).then(function (section) {
+      if (!section) {
+        writeHaClipboard(card);
+        return;
+      }
+      section._layoutElement.dispatchEvent(
+        new CustomEvent("ll-copy-card", { bubbles: true, composed: true, detail: { path: [0, 0, 0] } })
+      );
+      setTimeout(function () {
+        section.remove();
+      }, 0);
+    });
   }
 
   function writeHaClipboard(card) {
@@ -1118,6 +1142,8 @@
 
   // Demande confirmation avant de supprimer un dashboard qui stocke des templates.
   // Ne protège que les suppressions faites dans un onglet où le plugin est chargé.
+  const guardBypass = {};
+
   function installDeleteGuard(hass) {
     const conn = hass && hass.connection;
     if (!conn || conn.__declutterPlusGuard || typeof conn.sendMessagePromise !== "function") return;
@@ -1126,6 +1152,10 @@
     conn.sendMessagePromise = function (message) {
       const args = arguments;
       if (!message || message.type !== "lovelace/dashboards/delete") return original.apply(conn, args);
+      if (guardBypass[message.dashboard_id]) {
+        delete guardBypass[message.dashboard_id];
+        return original.apply(conn, args);
+      }
       const lang = resolveLang(hass);
       return original
         .call(conn, { type: "lovelace/dashboards/list" })
@@ -1250,22 +1280,51 @@
   }
 
   // Copie (sans rien retirer) les templates de l'ancien dashboard vers les données système.
+  // Migration 1.x : copie vers les données système, vérification par relecture,
+  // puis suppression de l'ancien dashboard caché seulement si la copie est identique.
+  // Résout { count, deleted }.
   function copyLegacyToSystem(hass, path) {
+    let templates = {};
     return hass
       .callWS({ type: "lovelace/config", url_path: path, force: true })
       .then(function (config) {
-        const templates = listToObject(isObject(config) ? config[TEMPLATES_KEY] : null);
-        return hass
-          .callWS({ type: "frontend/set_system_data", key: systemKey(path), value: { version: 1, templates: templates } })
-          .then(function () {
-            return Object.keys(templates).length;
-          });
+        templates = listToObject(isObject(config) ? config[TEMPLATES_KEY] : null);
+        return hass.callWS({ type: "frontend/set_system_data", key: systemKey(path), value: { version: 1, templates: templates } });
       })
-      .then(function (count) {
+      .then(function () {
+        return hass.callWS({ type: "frontend/get_system_data", key: systemKey(path) });
+      })
+      .then(function (result) {
+        const copied = readSystemTemplates(result);
+        const verified = !!copied && JSON.stringify(copied) === JSON.stringify(templates);
+        if (!verified) return false;
+        return deleteDashboardByPath(hass, path).then(
+          function () {
+            return true;
+          },
+          function (e) {
+            console.warn("[declutter-plus] old storage dashboard not deleted", e);
+            return false;
+          }
+        );
+      })
+      .then(function (deleted) {
         return loadLibrary(hass, path, true).then(function () {
-          return count;
+          return { count: Object.keys(templates).length, deleted: deleted };
         });
       });
+  }
+
+  function deleteDashboardByPath(hass, path) {
+    return hass.callWS({ type: "lovelace/dashboards/list" }).then(function (list) {
+      const dash = (Array.isArray(list) ? list : []).find(function (d) {
+        return d.url_path === path;
+      });
+      if (!dash) return null;
+      // suppression voulue : la confirmation de installDeleteGuard ne s'applique pas
+      guardBypass[dash.id] = true;
+      return hass.callWS({ type: "lovelace/dashboards/delete", dashboard_id: dash.id });
+    });
   }
 
   // Relit les templates frais et n'écrit que la clé de la bibliothèque.
@@ -1335,13 +1394,14 @@
     };
   }
 
-  // Priorité : ce dashboard, puis decluttering-card de ce dashboard, puis partagé.
+  // Priorité : ancien stockage dans ce dashboard (1.x), puis système, puis
+  // decluttering-card (une copie dans le système l'emporte sur l'original).
   function allTemplates(entry, dashConfig) {
     const out = {};
     const loc = localTemplates(dashConfig);
     [
-      [entry ? entry.templates : {}, SCOPE_SHARED],
       [loc.legacy, SCOPE_LEGACY],
+      [entry ? entry.templates : {}, SCOPE_SHARED],
       [loc.local, SCOPE_LOCAL]
     ].forEach(function (pair) {
       Object.keys(pair[0]).forEach(function (name) {
@@ -1557,7 +1617,7 @@
       name: name,
       description: tpl.description,
       kind: tpl.kind,
-      scope: found.scope === SCOPE_SHARED ? SCOPE_SHARED : SCOPE_LOCAL,
+      scope: SCOPE_SHARED, // stockage système uniquement : une modification y range le template
       card: card,
       vars: vars,
       extraDefaults: extra,
@@ -2808,14 +2868,7 @@
       box.appendChild(this._el("label", { class: "lbl", text: t(lang, "fieldDescription") }));
       box.appendChild(descInput);
 
-      box.appendChild(this._el("label", { class: "lbl", text: t(lang, "fieldScope") }));
-      const scopeHelp = this._el("div", { class: "help" });
-      box.appendChild(this._scopeSelect(lang, draft.scope, (scope) => {
-        draft.scope = scope;
-        scopeHelp.textContent = this._scopeHelp(lang, scope);
-      }));
-      scopeHelp.textContent = this._scopeHelp(lang, draft.scope);
-      box.appendChild(scopeHelp);
+      box.appendChild(this._el("div", { class: "help", text: t(lang, "storageShared") }));
 
       box.appendChild(
         this._el("div", { class: "box" }, [this._el("h4", { text: t(lang, "createHelpTitle") }), this._el("div", { class: "help", text: t(lang, "createHelp") })])
@@ -2887,7 +2940,7 @@
         name: pending.name,
         description: pending.description || "",
         kind: "card",
-        scope: pending.scope,
+        scope: SCOPE_SHARED,
         card: { type: GRID_TYPE, cards: list.map(cleanCard) },
         vars: [],
         extraDefaults: {},
@@ -2898,23 +2951,6 @@
         setPendingDraft(null);
         return ed;
       });
-    }
-
-    _scopeHelp(lang, scope) {
-      return t(lang, scope === SCOPE_SHARED ? "storageShared" : "storageLocal");
-    }
-
-    _scopeSelect(lang, value, onChange) {
-      const select = this._el("select", { class: "text" });
-      const shared = !this._entry().error;
-      [SCOPE_SHARED, SCOPE_LOCAL].forEach((scope) => {
-        const opt = this._el("option", { value: scope, text: this._scopeLabel(lang, scope) });
-        if (scope === SCOPE_SHARED && !shared) opt.disabled = true;
-        if (scope === (value === SCOPE_LEGACY ? SCOPE_LOCAL : value)) opt.selected = true;
-        select.appendChild(opt);
-      });
-      select.addEventListener("change", () => onChange(select.value));
-      return select;
     }
 
     // --- Choix d'un template existant
@@ -3060,17 +3096,17 @@
           ed.description = descInput.value;
         }, null, target.name);
       });
-      const scopeHelp = this._el("div", { class: "help", text: this._scopeHelp(lang, target.found.scope === SCOPE_SHARED ? SCOPE_SHARED : SCOPE_LOCAL) });
-      box.appendChild(
-        this._el("div", { class: "grid2" }, [
-          this._el("div", null, [this._el("label", { class: "lbl", text: t(lang, "fieldName") }), nameInput]),
-          this._el("div", null, [
-            this._el("label", { class: "lbl", text: t(lang, "fieldScope") }),
-            this._scopeSelect(lang, target.found.scope, (scope) => this._move(target.name, scope))
+      box.appendChild(this._el("label", { class: "lbl", text: t(lang, "fieldName") }));
+      box.appendChild(nameInput);
+      if (target.found.scope !== SCOPE_SHARED) {
+        // ancien emplacement : proposer de le ranger dans le stockage système
+        box.appendChild(
+          this._el("div", { class: "box" }, [
+            this._el("div", { class: "help", text: t(lang, target.found.scope === SCOPE_LEGACY ? "legacyTemplateHelp" : "localTemplateHelp") }),
+            this._link(t(lang, "moveToSystem"), () => this._move(target.name, SCOPE_SHARED))
           ])
-        ])
-      );
-      box.appendChild(scopeHelp);
+        );
+      }
       box.appendChild(this._el("label", { class: "lbl", text: t(lang, "fieldDescription") }));
       box.appendChild(descInput);
 
@@ -3205,7 +3241,9 @@
           this._el("div", { class: "help", text: t(lang, "legacyCopyHelp") }),
           this._link(t(lang, "legacyCopy"), () => {
             this._run(copyLegacyToSystem(this._hass, entry.path), null)
-              .then(() => this._notify(tSub(lang, "legacyCopied", { count: count }), "ok"))
+              .then((result) =>
+                this._notify(tSub(lang, result.deleted ? "legacyCopied" : "legacyNotDeleted", { count: result.count }), result.deleted ? "ok" : "err")
+              )
               .catch(function () {});
           })
         ])
@@ -3465,7 +3503,8 @@
       if (dialog && dialog._params && dialog._params.lovelaceConfig) extra.push(dialog._params.lovelaceConfig);
       const hass = this._hass;
       const path = this._path();
-      const leavesLocal = orig && (origin === SCOPE_LOCAL || origin === SCOPE_LEGACY);
+      // un template decluttering-card n'est jamais retiré de son dashboard (cartes d'origine)
+      const leavesLocal = orig && origin === SCOPE_LOCAL;
       if ((target === SCOPE_LOCAL || leavesLocal) && !lovelace) return Promise.reject(new Error("dashboard unavailable"));
 
       let chain;
@@ -3476,8 +3515,8 @@
         });
         if (leavesLocal) {
           chain = chain.then(function () {
-            return saveLocal(lovelace, extra, function (local, legacy) {
-              delete (origin === SCOPE_LEGACY ? legacy : local)[orig];
+            return saveLocal(lovelace, extra, function (local) {
+              delete local[orig];
             });
           });
         }
@@ -3568,9 +3607,8 @@
       this._run(this._writeDraft(ed), t(lang, "saved")).catch(function () {});
     }
 
-    // Partagé par défaut ; « ce dashboard » seulement si les données système sont indisponibles
     _defaultScope() {
-      return this._entry().error ? SCOPE_LOCAL : SCOPE_SHARED;
+      return SCOPE_SHARED;
     }
 
     // --- Actions de l'aperçu (boutons à droite)
@@ -3947,8 +3985,7 @@
         card = this._config.paste;
       }
       if (!card) return;
-      writeHaClipboard(card);
-      this._notify(t(lang, "copied"), "ok");
+      copyToHaClipboard(this._hass, cleanCard(card)).then(() => this._notify(t(lang, "copied"), "ok"));
     }
   }
 

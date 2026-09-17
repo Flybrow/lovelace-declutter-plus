@@ -4,19 +4,24 @@
 
 ## 2.0.0 — 17 septembre 2026
 
-### Stockage partagé sans dashboard caché
+### Stockage dans les données système de Home Assistant
 
-- Les templates partagés sont désormais stockés dans les **données système de
+- Les templates sont désormais stockés uniquement dans les **données système de
   Home Assistant** (lisibles par tous les utilisateurs, écrites par les
   administrateurs, mises à jour en direct, incluses dans les sauvegardes Home
-  Assistant) au lieu d'un dashboard caché : plus de dashboard à protéger, plus de
-  vues à reconstruire, une seule lecture légère par chargement de page.
-- **Copie facultative depuis la 1.x, jamais automatique** : les templates de
-  l'ancien dashboard caché continuent d'y fonctionner (lus et modifiés) aussi
-  longtemps que vous le souhaitez. Les écrans d'accueil et *Gérer les templates*
-  proposent **Copier vers le nouveau stockage** ; la copie laisse l'ancien
-  dashboard intact et utilisable.
-- L'option `library` désigne désormais une bibliothèque partagée séparée.
+  Assistant), utilisables sur tous les dashboards. Plus de stockage à choisir ni
+  de dashboard caché.
+- Les templates encore stockés dans un dashboard continuent de fonctionner ;
+  *Gérer les templates* propose **Déplacer vers le stockage système**, et les
+  modifier les déplace aussi. Les templates decluttering-card ne sont jamais
+  modifiés : ils sont copiés, et la copie est ensuite utilisée.
+- **Déplacement depuis la 1.x, jamais automatique** : les templates de l'ancien
+  dashboard caché continuent d'y fonctionner (lus et modifiés) aussi longtemps
+  que vous le souhaitez. Les écrans d'accueil et *Gérer les templates* proposent
+  **Déplacer vers le nouveau stockage** : les templates sont copiés, la copie est
+  relue et vérifiée, et seulement ensuite l'ancien dashboard est supprimé
+  (conservé, avec un message, si la vérification échoue).
+- L'option `library` désigne désormais une bibliothèque de templates séparée.
 
 ### Éditeur guidé
 
@@ -24,8 +29,7 @@
   **Créer un template**, **Utiliser un template existant**, **Gérer les
   templates**. L'aperçu ne propose ni *Ajouter une carte* ni *Importer une
   section* tant qu'aucun template n'est choisi ou créé.
-- **Écran de création** : nom, description, stockage, et comment remplir le
-  template. Dès que le nom est valide, des cartes s'ajoutent depuis l'aperçu
+- **Écran de création** : nom, description, et comment remplir le template. Dès que le nom est valide, des cartes s'ajoutent depuis l'aperçu
   (*Ajouter une carte*, *Importer une section*) ; la première carte crée le
   template. Pas de bouton de création séparé : le bouton **Enregistrer** de Home
   Assistant crée le template (même vide) et enregistre la carte. Coller une carte
@@ -39,7 +43,7 @@
   **Gérer les templates**.
 - **Gérer les templates** : tous les templates avec leur nombre de cartes et
   d'utilisations ; renommer (avec avertissement pour les autres cartes),
-  stockage, description, variables, supprimer (avec confirmation).
+  description, variables, supprimer (avec confirmation).
 - Les variables sont repliées par défaut et marquées *(facultatif)*, sur la carte
   et dans *Gérer les templates*.
 
@@ -54,6 +58,13 @@
 - Un nom déjà pris par un template différent reçoit le suffixe `_decluttering`.
 - Les templates copiés sont mémorisés : ils ne sont plus proposés, même si la
   copie est modifiée ensuite, sauf si l'original decluttering-card change.
+
+### Corrections
+
+- **Copier** dans la barre d'édition d'une carte du template passe désormais par
+  Home Assistant lui-même : la carte peut être collée tout de suite n'importe où
+  dans Home Assistant (Home Assistant garde son presse-papiers de cartes en
+  mémoire).
 
 ### Dashboard en mode édition
 

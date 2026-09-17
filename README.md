@@ -24,10 +24,11 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
     duplicate, copy, delete.
 - **Several cards per template**, side by side on a 12-column grid like a
   section. Set each card's width in the *Layout* tab of its editor.
-- **Manage templates** screen: rename, change storage, variables, delete, with
+- **Manage templates** screen: rename, description, variables, delete, with
   the number of cards using each template.
-- **Shared templates stored in Home Assistant's system data**: no hidden
-  dashboard, included in Home Assistant backups, plus an automatic backup.
+- **Templates stored in Home Assistant's system data**: usable on every
+  dashboard, no hidden dashboard, included in Home Assistant backups, plus an
+  automatic backup.
 - **Optional variables** with real pickers (entity, icon, area…), to reuse one
   template with different values.
 - **Bubble Card pop-ups** stay hidden until opened. In the Declutter Plus editor
@@ -62,8 +63,8 @@ version does the same at any time.
 
 1. Edit a dashboard › *Add card* › **Declutter Plus**. The home screen explains
    the plugin and offers two choices.
-2. **Create a template**: give it a name (letters, digits, `_`, `-`), an optional
-   description and a storage (*Shared* by default).
+2. **Create a template**: give it a name (letters, digits, `_`, `-`) and an
+   optional description.
 3. As soon as the name is valid, fill it from the preview on the right: **Add
    card** (card picker) or **Import a section** (every card and container of a
    section). Click **Save** to finish: it creates the template, even empty, and
@@ -83,17 +84,17 @@ original cards yourself if you only want to keep the Declutter Plus version.
 | Screen | When | What |
 | --- | --- | --- |
 | Home | new card | explanations, **Create a template**, **Use an existing template**, **Manage templates**; offers to copy decluttering-card templates or 1.x templates when found |
-| New template | from Home | name, description, storage, how to fill the template; cards are added from the preview and **Save** creates the template |
+| New template | from Home | name, description, how to fill the template; cards are added from the preview and **Save** creates the template |
 | Choose a template | from Home or **Change template** | gallery with thumbnails and search |
 | This card | existing card | the template used, a **Manage my templates** button, and **this card's variable values only** (collapsed *Variables (optional)* block); **Change template**, **Manage templates** |
-| Manage templates | from Home or This card | every template with its number of cards and uses: rename, storage, description, variables, delete |
+| Manage templates | from Home or This card | every template with its number of cards and uses: rename, description, variables, delete; **Move to the system storage** for templates still stored in a dashboard |
 
 Once a template is chosen, or a valid name is entered on the New template
 screen, the preview on the right holds **Add card**, **Import a section** and
 the edit toolbar of each card. On the home, choose and manage screens, nothing
 is offered there and Home Assistant's **Save** button is hidden: they act like a
 menu. Changes to a template (its cards, name,
-storage, variables) are saved immediately; the *Save* button of Home Assistant
+description, variables) are saved immediately; the *Save* button of Home Assistant
 saves this card (template choice and variable values).
 
 ### Deleting
@@ -121,34 +122,30 @@ one card per room with only the entity and the name changing.
 
 ## Template storage
 
-| Storage | Where it is saved | Usable on |
-| --- | --- | --- |
-| **Shared** (default) | Home Assistant's system data (`.storage/frontend.system_data`) | every dashboard |
-| **This dashboard** | the current dashboard's configuration | this dashboard only |
+Templates are stored in **Home Assistant's system data**
+(`.storage/frontend.system_data`): usable on every dashboard, read once when
+the page loads then updated live, and included in Home Assistant backups. There
+is no storage to choose.
 
-- **Shared is the simplest choice.** It needs no dashboard, is read once when
-  the page loads and is then updated live, and is included in Home Assistant
-  backups. Choose *This dashboard* only if you want the templates to travel with
-  that dashboard's configuration.
-- Changing the storage of a template moves it. If both storages hold a template
-  with the same name, the one of the current dashboard wins.
-- Shared templates are also **backed up automatically** in the administrator's
-  user data; if they are ever erased, the editor offers **Restore templates**.
-- Deleting a dashboard that stores templates (*This dashboard*) asks for
-  confirmation, in a browser tab where Declutter Plus is loaded.
-- Dashboards in YAML mode cannot be modified from the UI: use shared storage.
+- Templates are also **backed up automatically** in the administrator's user
+  data; if they are ever erased, the editor offers **Restore templates**.
+- **Templates still stored in a dashboard** (earlier versions) keep working. In
+  *Manage templates*, **Move to the system storage** moves them; editing one
+  moves it too.
+- **decluttering-card templates** (`decluttering_templates`) are never changed:
+  moving or editing one copies it to the system storage, and the copy is used
+  from then on.
 
 ### Upgrading from 1.x
 
-Versions 1.x stored shared templates in a hidden dashboard. Nothing is converted
+Versions 1.x stored templates in a hidden dashboard. Nothing is converted
 automatically: those templates keep working from that dashboard (they can still
 be edited) as long as you want.
 
-When you are ready, the home screen and *Manage templates* offer **Copy to the
-new storage**. It copies the templates to Home Assistant's system data and
-leaves the old dashboard untouched and usable. From then on, Declutter Plus 2.0
-uses the new storage; delete the old dashboard in *Settings › Dashboards* only
-when you no longer need it.
+When you are ready, the home screen and *Manage templates* offer **Move to the
+new storage**. The templates are copied to Home Assistant's system data, the
+copy is read back and checked, and only then is the old dashboard deleted. If the
+check fails, the old dashboard is kept and a message tells you.
 
 ## Card options
 

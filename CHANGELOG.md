@@ -4,25 +4,29 @@
 
 ## 2.0.0 — 17 September 2026
 
-### Shared storage without a hidden dashboard
+### Storage in Home Assistant's system data
 
-- Shared templates are now stored in **Home Assistant's system data** (readable
+- Templates are now stored only in **Home Assistant's system data** (readable
   by every user, written by administrators, updated live, included in Home
-  Assistant backups) instead of a hidden dashboard: no dashboard to protect, no
-  views to rebuild, one light read per page load.
-- **Optional copy from 1.x, never automatic**: templates of the old hidden
-  dashboard keep working there (read and edited) as long as you want. The home
-  and *Manage templates* screens offer **Copy to the new storage**; the copy
-  leaves the old dashboard untouched and usable.
-- The `library` option now names a separate shared library.
+  Assistant backups), usable on every dashboard. There is no storage to choose
+  anymore and no hidden dashboard.
+- Templates still stored in a dashboard keep working; *Manage templates* offers
+  **Move to the system storage**, and editing one moves it too.
+  decluttering-card templates are never changed: they are copied, and the copy
+  is used from then on.
+- **Move from 1.x, never automatic**: templates of the old hidden dashboard keep
+  working there (read and edited) as long as you want. The home and *Manage
+  templates* screens offer **Move to the new storage**: the templates are
+  copied, the copy is read back and checked, and only then is the old dashboard
+  deleted (kept, with a message, if the check fails).
+- The `library` option now names a separate template library.
 
 ### Guided editor
 
 - **Home screen** for a new card: what the plugin does, **Create a template**,
   **Use an existing template**, **Manage templates**. The preview offers no
   *Add card* or *Import a section* until a template is chosen or created.
-- **New template screen**: name, description, storage, and how to fill the
-  template. As soon as the name is valid, cards can be added from the preview
+- **New template screen**: name, description, and how to fill the template. As soon as the name is valid, cards can be added from the preview
   (*Add card*, *Import a section*); the first card creates the template. There
   is no separate create button: Home Assistant's **Save** creates the template
   (even empty) and saves the card. Pasting a copied card opens this screen with
@@ -33,8 +37,8 @@
   variable values, with a **Manage my templates** button next to the template
   name, and **Change template** / **Manage templates** links.
 - **Manage templates**: every template with its number of cards and uses;
-  rename (with a warning for other cards), storage, description, variables,
-  delete (with confirmation).
+  rename (with a warning for other cards), description, variables, delete
+  (with confirmation).
 - Variables are collapsed by default and marked *(optional)*, on the card and in
   *Manage templates*.
 
@@ -48,6 +52,12 @@
 - A name already used by a different template gets the `_decluttering` suffix.
 - Copied templates are remembered: they are not offered again, even if the copy
   is edited afterwards, unless the original decluttering-card template changes.
+
+### Fixes
+
+- **Copy** in the edit toolbar of a template card now copies through Home
+  Assistant itself, so the card can be pasted anywhere in Home Assistant right
+  away (Home Assistant keeps its card clipboard in memory).
 
 ### Dashboard in edit mode
 
