@@ -14,9 +14,11 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
   card that uses it: every card follows.
 - **Guided editor**: a new card opens a home screen to create a template or use
   an existing one; an existing card only shows its own settings.
-- **Edited like Bubble Card pop-ups**, from the preview on the right:
-  - **Add card** opens Home Assistant's card picker, then the card's own editor
-    (visual or code). Any card works, including custom cards such as Bubble Card.
+- **Everything is done with the mouse, no YAML to write**: you create and edit
+  your templates with the same windows and menus as any Home Assistant card,
+  right in the preview on the right. No code is needed.
+  - **Add card**: pick a card from Home Assistant's usual list, then set it up
+    with its menus. Any card works, including custom cards such as Bubble Card.
   - **Import a section** copies every card and container of a dashboard section.
   - Each card of the template has Home Assistant's edit toolbar: edit,
     duplicate, copy, delete.
@@ -202,7 +204,19 @@ declutter_plus_templates:
 
 ## Migrating from decluttering-card
 
-Replace `custom:decluttering-card` with `custom:declutter-plus-card`: the
-dashboard's existing `decluttering_templates` keep working and appear as
-*This dashboard (decluttering-card)*. To convert one, open *Manage templates*,
-edit it and choose *Shared* as storage.
+**Automatic offer**: each time an administrator opens the Declutter Plus editor,
+the plugin looks for `decluttering_templates` in every dashboard. If some are not
+in Declutter Plus yet, it offers to **Copy into Declutter Plus** (shared
+templates).
+
+- Nothing is changed on the decluttering-card side: its templates and cards keep
+  working. Delete them yourself if you wish.
+- A template whose name already exists in Declutter Plus with a different
+  content is copied with the `_decluttering` suffix.
+- **Later** asks again next time; tick **Don't ask again** to stop the offer
+  (saved in your Home Assistant user data, on every device).
+- To use a copy, add a Declutter Plus card and choose the template.
+
+Templates left in a dashboard's `decluttering_templates` are also readable
+directly by Declutter Plus cards of that dashboard (shown as *This dashboard
+(decluttering-card)*).

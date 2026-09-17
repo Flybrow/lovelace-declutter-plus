@@ -16,10 +16,13 @@ moderne et graphique de [decluttering-card](https://github.com/custom-cards/decl
 - **Éditeur guidé** : une nouvelle carte ouvre un écran d'accueil pour créer un
   template ou en utiliser un existant ; une carte existante n'affiche que ses
   propres réglages.
-- **Édition façon pop-up Bubble Card**, depuis l'aperçu à droite :
-  - **Ajouter une carte** ouvre le sélecteur de cartes de Home Assistant, puis
-    l'éditeur de la carte (visuel ou code). Toutes les cartes fonctionnent, y
-    compris les cartes personnalisées comme Bubble Card.
+- **Tout se fait à la souris, sans écrire de YAML** : vous créez et modifiez vos
+  templates avec les mêmes fenêtres et menus que pour n'importe quelle carte de
+  Home Assistant, directement dans l'aperçu à droite. Aucune ligne de code
+  n'est nécessaire.
+  - **Ajouter une carte** : choisissez une carte dans la liste habituelle de
+    Home Assistant, puis réglez-la avec ses menus. Toutes les cartes
+    fonctionnent, y compris les cartes personnalisées comme Bubble Card.
   - **Importer une section** copie toutes les cartes et conteneurs d'une
     section.
   - Chaque carte du template a la barre d'édition de Home Assistant : modifier,
@@ -220,7 +223,21 @@ declutter_plus_templates:
 
 ## Migration depuis decluttering-card
 
-Remplacer `custom:decluttering-card` par `custom:declutter-plus-card` : les
-`decluttering_templates` du dashboard continuent de fonctionner et apparaissent
-comme *Ce dashboard (decluttering-card)*. Pour en convertir un, ouvrir *Gérer les
-templates*, le modifier et choisir le stockage *Partagé*.
+**Proposition automatique** : à chaque ouverture de l'éditeur Declutter Plus par
+un administrateur, le plugin recherche des `decluttering_templates` dans tous les
+dashboards. S'il en trouve qui ne sont pas encore dans Declutter Plus, il propose
+de les **Copier dans Declutter Plus** (templates partagés).
+
+- Rien n'est modifié côté decluttering-card : ses templates et ses cartes
+  continuent de fonctionner. Supprimez-les vous-même si vous le souhaitez.
+- Un template dont le nom existe déjà dans Declutter Plus avec un contenu
+  différent est copié avec le suffixe `_decluttering`.
+- **Plus tard** redemandera à la prochaine ouverture ; cochez **Ne plus
+  demander** pour arrêter la proposition (enregistré dans vos données
+  utilisateur Home Assistant, sur tous vos appareils).
+- Pour utiliser une copie, ajoutez une carte Declutter Plus et choisissez le
+  template.
+
+Les templates restés dans les `decluttering_templates` d'un dashboard sont aussi
+lisibles directement par les cartes Declutter Plus de ce dashboard (affichés
+comme *Ce dashboard (decluttering-card)*).

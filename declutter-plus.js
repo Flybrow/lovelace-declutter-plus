@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "2.0.0";
+  const VERSION = "2.1.0";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -18,6 +18,9 @@
   const EDITOR_TAG = "declutter-plus-card-editor";
   const SHARED_DASHBOARD = "declutter-plus"; // ancien dashboard caché, identifiant de la bibliothèque
   const SYSTEM_KEY = "declutter_plus";
+  const PREFS_KEY = "declutter_plus_prefs";
+  const DECLUTTERING_SUFFIX = "_decluttering";
+  const SCAN_TTL_MS = 300000;
   const BACKUP_KEY = "declutter_plus_backup_";
   const TEMPLATES_KEY = "declutter_plus_templates";
   const LEGACY_KEY = "decluttering_templates";
@@ -97,6 +100,12 @@
       legacyCopyHelp: "You can copy them to Home Assistant's system data, the new storage: no hidden dashboard to maintain, updated live, included in backups. The old dashboard is left untouched and stays usable.",
       legacyCopy: "Copy to the new storage",
       legacyCopied: "{count} template(s) copied to the new storage. The old storage dashboard is unchanged; delete it in Settings › Dashboards only when you no longer need it.",
+      declFound: "{count} decluttering-card template(s) found in {dashboards} dashboard(s). Copy them into Declutter Plus?",
+      declHelp: "They are copied to Declutter Plus shared templates. The original decluttering-card templates and cards are not changed and keep working; delete them yourself if you wish.",
+      declCopy: "Copy into Declutter Plus",
+      declLater: "Later",
+      declNever: "Don't ask again",
+      declCopied: "{count} decluttering-card template(s) copied into Declutter Plus. Your decluttering-card cards still use decluttering-card: to use a copy, add a Declutter Plus card and choose the template.",
       popupNoHash: "Pop-up without hash",
       backupFound: "No shared template found, but a backup of {count} template(s) from {date} exists.",
       backupRestore: "Restore templates",
@@ -196,6 +205,12 @@
       legacyCopyHelp: "Vous pouvez les copier dans les données système de Home Assistant, le nouveau stockage : plus de dashboard caché à maintenir, mise à jour en direct, inclus dans les sauvegardes. L'ancien dashboard n'est pas modifié et reste utilisable.",
       legacyCopy: "Copier vers le nouveau stockage",
       legacyCopied: "{count} template(s) copié(s) vers le nouveau stockage. L'ancien dashboard de stockage n'a pas changé ; ne le supprimez dans Paramètres › Tableaux de bord que lorsque vous n'en avez plus besoin.",
+      declFound: "{count} template(s) decluttering-card trouvé(s) dans {dashboards} dashboard(s). Les copier dans Declutter Plus ?",
+      declHelp: "Ils sont copiés dans les templates partagés de Declutter Plus. Les templates et cartes decluttering-card d'origine ne sont pas modifiés et continuent de fonctionner ; supprimez-les vous-même si vous le souhaitez.",
+      declCopy: "Copier dans Declutter Plus",
+      declLater: "Plus tard",
+      declNever: "Ne plus demander",
+      declCopied: "{count} template(s) decluttering-card copié(s) dans Declutter Plus. Vos cartes decluttering-card utilisent toujours decluttering-card : pour utiliser une copie, ajoutez une carte Declutter Plus et choisissez le template.",
       popupNoHash: "Pop-up sans hash",
       backupFound: "Aucun template partagé trouvé, mais une sauvegarde de {count} template(s) du {date} existe.",
       backupRestore: "Restaurer les templates",
@@ -1239,6 +1254,80 @@
     return out;
   }
 
+  // Templates decluttering-card (`decluttering_templates`) de tous les dashboards.
+  // Le premier trouvé l'emporte quand un nom existe dans plusieurs dashboards.
+  let declutteringScan = null;
+
+  function scanDeclutteringTemplates(hass) {
+    if (declutteringScan && Date.now() - declutteringScan.at < SCAN_TTL_MS) return declutteringScan.promise;
+    const promise = hass
+      .callWS({ type: "lovelace/dashboards/list" })
+      .then(function (list) {
+        const paths = [null].concat(
+          (Array.isArray(list) ? list : []).map(function (d) {
+            return d.url_path;
+          })
+        );
+        return Promise.all(
+          paths.map(function (path) {
+            return hass.callWS({ type: "lovelace/config", url_path: path }).then(
+              function (config) {
+                return listToObject(isObject(config) ? config[LEGACY_KEY] : null);
+              },
+              function () {
+                return {};
+              }
+            );
+          })
+        );
+      })
+      .then(function (perDashboard) {
+        const templates = {};
+        let dashboards = 0;
+        perDashboard.forEach(function (found) {
+          const names = Object.keys(found);
+          if (names.length) dashboards++;
+          names.forEach(function (name) {
+            if (!hasVar(templates, name) && normalizeTemplate(found[name])) templates[name] = found[name];
+          });
+        });
+        return { templates: templates, dashboards: dashboards };
+      });
+    declutteringScan = { at: Date.now(), promise: promise };
+    promise.catch(function () {
+      declutteringScan = null;
+    });
+    return promise;
+  }
+
+  // Templates decluttering-card pas encore copiés : absents de la bibliothèque, ou
+  // présents sous un autre contenu (copiés alors avec un suffixe).
+  function pendingDecluttering(scan, shared) {
+    const pending = {};
+    Object.keys(scan.templates).forEach(function (name) {
+      const raw = scan.templates[name];
+      if (hasVar(shared, name) && JSON.stringify(shared[name]) === JSON.stringify(raw)) return;
+      if (hasVar(shared, name + DECLUTTERING_SUFFIX) && JSON.stringify(shared[name + DECLUTTERING_SUFFIX]) === JSON.stringify(raw)) return;
+      pending[name] = raw;
+    });
+    return pending;
+  }
+
+  function readPrefs(hass) {
+    return hass.callWS({ type: "frontend/get_user_data", key: PREFS_KEY }).then(
+      function (result) {
+        return isObject(result && result.value) ? result.value : {};
+      },
+      function () {
+        return {};
+      }
+    );
+  }
+
+  function writePrefs(hass, prefs) {
+    return hass.callWS({ type: "frontend/set_user_data", key: PREFS_KEY, value: prefs });
+  }
+
   // Compte, en un passage sur tous les dashboards, les cartes Declutter Plus par template.
   function countAllTemplateUsages(hass) {
     const types = ["custom:" + CARD_TAG, "custom:" + ELEMENT_TAG, "custom:" + ROW_TAG];
@@ -2173,6 +2262,10 @@
     .tpl-sub { font-size:12px; color:var(--secondary-text-color); }
     .tpl-actions { display:flex; gap:14px; }
     .link.danger { color:var(--error-color); }
+    .offer { margin:0 0 14px; border-color:var(--primary-color); }
+    .offer-title { font-weight:500; margin-bottom:4px; }
+    .offer .actions { margin-top:10px; }
+    label.check { display:flex; align-items:center; gap:6px; font-size:13px; margin-top:8px; cursor:pointer; }
     .version { font-size:11px; color:var(--secondary-text-color); text-align:right; opacity:.7; margin-top:10px; }
     .chips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
     .chip { display:inline-flex; align-items:center; gap:4px; font-size:12px; padding:3px 4px 3px 10px; border-radius:14px;
@@ -2207,6 +2300,8 @@
       this._draftCreate = null; // saisie de l'écran de création
       this._manageOpen = null; // template déplié dans l'écran de gestion
       this._usage = null; // utilisations par template (écran de gestion)
+      this._decl = null; // templates decluttering-card à proposer, pour cette ouverture
+      this._declHidden = false;
       // ne redessiner que si les templates ont vraiment changé
       this._onLibrary = (entry) => {
         const signature = JSON.stringify([entry.error ? 1 : 0, entry.legacy, entry.templates]);
@@ -2233,6 +2328,7 @@
       this._hass = hass;
       if (first) {
         installDeleteGuard(hass);
+        this._checkDecluttering(hass);
         loadHelpers().then(this._render.bind(this), function () {});
         loadLibrary(hass, this._path(), true).then(this._onLibrary);
       } else if (resolveLang(hass) !== this._lastLang) {
@@ -2363,6 +2459,7 @@
       if (this._message) {
         root.appendChild(this._el("div", { class: "notice " + (this._message.type || ""), text: this._message.text }));
       }
+      this._renderDeclutteringOffer(root, lang);
       const view = this._currentView();
       if (view === VIEW_CARD) root.appendChild(this._renderCard(lang));
       else if (view === VIEW_CREATE) root.appendChild(this._renderCreate(lang));
@@ -2735,6 +2832,59 @@
         box.appendChild(pick);
       }
       return box;
+    }
+
+    // À chaque ouverture (administrateur), sauf « Ne plus demander »
+    _checkDecluttering(hass) {
+      if (!isAdmin(hass)) return;
+      Promise.all([readPrefs(hass), scanDeclutteringTemplates(hass), loadLibrary(hass, this._path())])
+        .then(([prefs, scan]) => {
+          if (prefs.skip_decluttering_import) return;
+          this._decl = scan;
+          this._render();
+        })
+        .catch(function (e) {
+          console.warn("[declutter-plus] decluttering-card scan failed", e);
+        });
+    }
+
+    _renderDeclutteringOffer(root, lang) {
+      if (!this._decl || this._declHidden || !isAdmin(this._hass)) return;
+      const pending = pendingDecluttering(this._decl, this._entry().templates);
+      const count = Object.keys(pending).length;
+      if (!count) return;
+      const never = this._el("input", { type: "checkbox", id: "decl-never" });
+      const box = this._el("div", { class: "box offer" }, [
+        this._el("div", { class: "offer-title", text: tSub(lang, "declFound", { count: count, dashboards: this._decl.dashboards }) }),
+        this._el("div", { class: "help", text: t(lang, "declHelp") }),
+        this._el("label", { class: "check", for: "decl-never" }, [never, " " + t(lang, "declNever")])
+      ]);
+      const copy = this._el("button", { class: "action primary", type: "button", text: t(lang, "declCopy") });
+      copy.addEventListener("click", () => this._copyDecluttering(pending, never.checked));
+      const later = this._el("button", { class: "action", type: "button", text: t(lang, "declLater") });
+      later.addEventListener("click", () => {
+        this._declHidden = true;
+        if (never.checked) writePrefs(this._hass, { skip_decluttering_import: true }).catch(function () {});
+        this._render();
+      });
+      box.appendChild(this._el("div", { class: "actions" }, [later, copy]));
+      root.appendChild(box);
+    }
+
+    _copyDecluttering(pending, never) {
+      const lang = this._lang();
+      const names = Object.keys(pending);
+      const chain = saveShared(this._hass, this._path(), function (lib) {
+        names.forEach(function (name) {
+          let target = name;
+          if (hasVar(lib, name) && JSON.stringify(lib[name]) !== JSON.stringify(pending[name])) {
+            target = uniqueName(name + DECLUTTERING_SUFFIX, lib);
+          }
+          lib[target] = clone(pending[name]);
+        });
+      }).then(() => (never ? writePrefs(this._hass, { skip_decluttering_import: true }).catch(function () {}) : null));
+      this._declHidden = true;
+      this._run(chain, tSub(lang, "declCopied", { count: names.length })).catch(function () {});
     }
 
     // Templates encore dans l'ancien dashboard : proposer une copie, jamais imposée

@@ -2,6 +2,18 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 2.1.0 — 17 septembre 2026
+
+- **Copie proposée des templates decluttering-card** : à chaque ouverture de
+  l'éditeur Declutter Plus par un administrateur, les `decluttering_templates`
+  de tous les dashboards qui ne sont pas encore dans Declutter Plus sont proposés
+  à la copie dans les templates partagés. Les originaux ne sont jamais modifiés.
+  **Plus tard** redemande à la prochaine ouverture ; **Ne plus demander** arrête
+  la proposition (enregistré dans les données utilisateur Home Assistant). Un nom
+  déjà pris par un template différent reçoit le suffixe `_decluttering`.
+- README : formulation plus claire, tout se fait graphiquement, sans YAML à
+  écrire.
+
 ## 2.0.0 — 17 septembre 2026
 
 ### Stockage partagé sans dashboard caché
