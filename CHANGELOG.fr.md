@@ -41,8 +41,8 @@
   utilise et ses propres valeurs de variables, avec un bouton **Gérer mes
   templates** à côté du nom du template, et les liens **Changer de template** /
   **Gérer les templates**.
-- **Gérer les templates** : tous les templates avec leur nombre de cartes et
-  d'utilisations ; renommer (avec avertissement pour les autres cartes),
+- **Gérer les templates**, dans une popup au-dessus de l'éditeur de la carte :
+  tous les templates avec leur aperçu, leur nombre de cartes et d'utilisations ; renommer (avec avertissement pour les autres cartes),
   description, variables, supprimer (avec confirmation).
 - Les variables sont repliées par défaut et marquées *(facultatif)*, sur la carte
   et dans *Gérer les templates*.

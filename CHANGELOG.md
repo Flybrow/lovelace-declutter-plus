@@ -36,7 +36,8 @@
 - **This card**: an existing card only shows the template it uses and its own
   variable values, with a **Manage my templates** button next to the template
   name, and **Change template** / **Manage templates** links.
-- **Manage templates**: every template with its number of cards and uses;
+- **Manage templates**, in a pop-up above the card editor: every template with
+  its preview, number of cards and uses;
   rename (with a warning for other cards), description, variables, delete
   (with confirmation).
 - Variables are collapsed by default and marked *(optional)*, on the card and in

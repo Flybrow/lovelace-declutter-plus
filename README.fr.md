@@ -30,8 +30,8 @@ moderne et graphique de [decluttering-card](https://github.com/custom-cards/decl
 - **Plusieurs cartes par template**, côte à côte sur une grille de 12 colonnes
   comme une section. La largeur se règle dans l'onglet *Mise en page* de
   l'éditeur de chaque carte.
-- Écran **Gérer les templates** : renommer, description, variables,
-  supprimer, avec le nombre de cartes qui utilisent chaque template.
+- Popup **Gérer les templates** : chaque template avec son aperçu, renommer,
+  description, variables, supprimer, et le nombre de cartes qui l'utilisent.
 - **Templates stockés dans les données système de Home Assistant** :
   utilisables sur tous les dashboards, plus de dashboard caché, inclus dans les
   sauvegardes Home Assistant, avec en plus une sauvegarde automatique.
@@ -97,7 +97,7 @@ Declutter Plus.
 | Nouveau template | depuis l'accueil | nom, description, comment remplir le template ; les cartes s'ajoutent depuis l'aperçu et **Enregistrer** crée le template |
 | Choisir un template | depuis l'accueil ou **Changer de template** | galerie avec miniatures et recherche |
 | Cette carte | carte existante | le template utilisé, un bouton **Gérer mes templates**, et **uniquement les valeurs des variables de cette carte** (bloc *Variables (facultatif)* replié) ; **Changer de template**, **Gérer les templates** |
-| Gérer les templates | depuis l'accueil ou Cette carte | tous les templates avec leur nombre de cartes et d'utilisations : renommer, description, variables, supprimer ; **Déplacer vers le stockage système** pour les templates encore stockés dans un dashboard |
+| Gérer les templates | popup, depuis l'accueil ou Cette carte | tous les templates avec leur aperçu, leur nombre de cartes et d'utilisations : renommer, description, variables, supprimer ; **Déplacer vers le stockage système** pour les templates encore stockés dans un dashboard |
 
 Dès qu'un template est choisi, ou qu'un nom valide est saisi sur l'écran de
 création, l'aperçu à droite contient **Ajouter une carte**, **Importer une

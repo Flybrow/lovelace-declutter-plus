@@ -24,8 +24,8 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
     duplicate, copy, delete.
 - **Several cards per template**, side by side on a 12-column grid like a
   section. Set each card's width in the *Layout* tab of its editor.
-- **Manage templates** screen: rename, description, variables, delete, with
-  the number of cards using each template.
+- **Manage templates** pop-up: each template with its preview, rename,
+  description, variables, delete, and the number of cards using it.
 - **Templates stored in Home Assistant's system data**: usable on every
   dashboard, no hidden dashboard, included in Home Assistant backups, plus an
   automatic backup.
@@ -87,7 +87,7 @@ original cards yourself if you only want to keep the Declutter Plus version.
 | New template | from Home | name, description, how to fill the template; cards are added from the preview and **Save** creates the template |
 | Choose a template | from Home or **Change template** | gallery with thumbnails and search |
 | This card | existing card | the template used, a **Manage my templates** button, and **this card's variable values only** (collapsed *Variables (optional)* block); **Change template**, **Manage templates** |
-| Manage templates | from Home or This card | every template with its number of cards and uses: rename, description, variables, delete; **Move to the system storage** for templates still stored in a dashboard |
+| Manage templates | pop-up, from Home or This card | every template with its preview, number of cards and uses: rename, description, variables, delete; **Move to the system storage** for templates still stored in a dashboard |
 
 Once a template is chosen, or a valid name is entered on the New template
 screen, the preview on the right holds **Add card**, **Import a section** and

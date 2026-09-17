@@ -8,7 +8,7 @@
 
   const VERSION = "2.0.0";
   // repère de build, changé à chaque publication d'une même version (cache navigateur)
-  const BUILD = "2026-09-17.5";
+  const BUILD = "2026-09-17.6";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -2534,6 +2534,20 @@
     .chip button { border:none; background:none; color:var(--secondary-text-color); cursor:pointer; font-size:14px; padding:0 4px; }
   `;
 
+  const MANAGE_POPUP_STYLE = `
+    .popup-head { display:flex; align-items:center; gap:12px; padding:18px 22px 8px; position:sticky; top:0; z-index:2;
+      background:var(--card-background-color,#fff); }
+    .popup-head h2 { flex:1; margin:0; }
+    .popup-close { border:none; background:none; color:inherit; font-size:20px; cursor:pointer; padding:4px 8px; border-radius:50%; }
+    .popup-body { padding:0 22px 22px; }
+    .row-thumb { width:170px; height:96px; flex:none; overflow:hidden; border-radius:10px; pointer-events:none;
+      background:var(--primary-background-color); }
+    .row-thumb .scale { zoom:.42; width:238%; padding:6px; box-sizing:border-box; }
+    .row-thumb .none { display:flex; align-items:center; justify-content:center; height:100%; font-size:11px;
+      color:var(--secondary-text-color); text-align:center; padding:6px; }
+    @media (max-width:600px) { .row-thumb { width:100%; height:110px; } }
+  `;
+
   const VIEW_HOME = "home";
   const VIEW_CREATE = "create";
   const VIEW_PICK = "pick";
@@ -2583,7 +2597,7 @@
       const templateChanged = !this._built || this._config.template !== config.template || !!this._config.paste !== !!config.paste;
       this._config = Object.assign({}, config);
       if (templateChanged) {
-        if (this._view !== VIEW_MANAGE) this._view = null;
+        this._view = null;
         this._render();
       } else {
         this._updateVariablesForm();
@@ -2627,6 +2641,10 @@
     disconnectedCallback() {
       this._entry().listeners.delete(this._onLibrary);
       this._syncSaveButton(false);
+      if (this._manage) {
+        this._manage.dialog.remove();
+        this._manage = null;
+      }
       const i = previewBus.editors.indexOf(this);
       if (i !== -1) previewBus.editors.splice(i, 1);
     }
@@ -2707,10 +2725,70 @@
     }
 
     _go(view) {
-      this._view = view;
       this._message = null;
-      if (view === VIEW_MANAGE) this._usage = null;
+      if (view === VIEW_MANAGE) {
+        // la gestion s'ouvre en popup, au-dessus de la fenêtre d'édition
+        this._usage = null;
+        this._openManage();
+        return;
+      }
+      this._view = view;
       this._render();
+    }
+
+    // Popup native (<dialog> modal) : passe au-dessus de la boîte de Home Assistant
+    _openManage() {
+      if (this._manage) {
+        this._renderManagePopup();
+        return;
+      }
+      const dialog = document.createElement("dialog");
+      dialog.style.cssText =
+        "padding:0;border:none;border-radius:24px;width:min(880px,96vw);max-height:90vh;overflow:auto;" +
+        "background:var(--card-background-color,#fff);color:var(--primary-text-color);font-family:var(--ha-font-family-body,Roboto,sans-serif)";
+      const host = document.createElement("div");
+      const root = host.attachShadow({ mode: "open" });
+      dialog.appendChild(host);
+      dialog.addEventListener("cancel", (ev) => {
+        ev.preventDefault();
+        this._closeManage();
+      });
+      document.body.appendChild(dialog);
+      this._manage = { dialog: dialog, root: root };
+      try {
+        dialog.showModal();
+      } catch (e) {
+        dialog.setAttribute("open", "");
+      }
+      this._renderManagePopup();
+    }
+
+    _closeManage() {
+      const manage = this._manage;
+      if (!manage) return;
+      this._manage = null;
+      this._manageOpen = null;
+      try {
+        manage.dialog.close();
+      } catch (e) {}
+      manage.dialog.remove();
+      this._render();
+    }
+
+    _renderManagePopup() {
+      const manage = this._manage;
+      if (!manage || !this._hass) return;
+      const lang = this._lang();
+      const root = manage.root;
+      root.innerHTML = "";
+      root.appendChild(this._el("style", { text: EDITOR_STYLE + MANAGE_POPUP_STYLE }));
+      const close = this._el("button", { class: "popup-close", type: "button", title: t(lang, "close"), text: "✕" });
+      close.addEventListener("click", () => this._closeManage());
+      root.appendChild(this._el("div", { class: "popup-head" }, [this._el("h2", { text: t(lang, "manageTitle") }), close]));
+      const body = this._el("div", { class: "popup-body" });
+      if (this._message) body.appendChild(this._el("div", { class: "notice " + (this._message.type || ""), text: this._message.text }));
+      body.appendChild(this._renderManage(lang));
+      root.appendChild(body);
     }
 
     _currentView() {
@@ -2750,8 +2828,8 @@
       if (view === VIEW_CARD) root.appendChild(this._renderCard(lang));
       else if (view === VIEW_CREATE) root.appendChild(this._renderCreate(lang));
       else if (view === VIEW_PICK) root.appendChild(this._renderPick(lang));
-      else if (view === VIEW_MANAGE) root.appendChild(this._renderManage(lang));
       else root.appendChild(this._renderHome(lang));
+      if (this._manage) this._renderManagePopup();
       // version chargée : repère simple quand le navigateur garde un ancien fichier
       const reloadLink = this._link(t(lang, "reloadNoCache"), reloadWithoutCache);
       root.appendChild(this._el("div", { class: "version" }, ["Declutter Plus v" + VERSION + " · build " + BUILD + " · ", reloadLink]));
@@ -3029,8 +3107,6 @@
 
     _renderManage(lang) {
       const box = this._el("div");
-      box.appendChild(this._backLink(lang));
-      box.appendChild(this._el("h3", { text: t(lang, "manageTitle") }));
       box.appendChild(this._el("div", { class: "help", text: t(lang, "manageHelp") }));
       this._renderLegacy(box, lang);
       this._renderBackup(box, lang);
@@ -3040,7 +3116,7 @@
         countAllTemplateUsages(this._hass).then(
           (usage) => {
             this._usage = usage;
-            if (this._currentView() === VIEW_MANAGE) this._render();
+            if (this._manage) this._renderManagePopup();
           },
           () => {
             this._usage = {};
@@ -3063,8 +3139,13 @@
         const usage = this._usage ? this._usage[name] : null;
         const sub = [tSub(lang, "cardsInTemplate", { count: cardCount })];
         sub.push(this._usage ? tSub(lang, "usedBy", { count: usage ? usage.cards : 0 }) : t(lang, "usageLoading"));
+        // aperçu du template (miniature mise en cache, créée quand elle est visible)
+        const thumb = this._el("div", { class: "row-thumb" });
+        if (tpl && tpl.kind === "card" && helpers) thumb.appendChild(this._thumbnail(name, tpl));
+        else thumb.appendChild(this._el("div", { class: "none", text: tSub(lang, "noPreview", { kind: tpl ? tpl.kind : "?" }) }));
         row.appendChild(
           this._el("div", { class: "tpl-head" }, [
+            thumb,
             this._el("div", { class: "grow" }, [
               this._el("div", { class: "current" }, [name, this._badge(lang, found.scope)]),
               this._el("div", { class: "tpl-sub", text: sub.join(" · ") })
@@ -3072,7 +3153,7 @@
             this._el("div", { class: "tpl-actions" }, [
               this._link(t(lang, open ? "close" : "edit"), () => {
                 this._manageOpen = open ? null : name;
-                this._render();
+                this._renderManagePopup();
               }),
               this._link(t(lang, "remove"), () => this._deleteByName(name), "danger")
             ])
@@ -3398,6 +3479,11 @@
       }
       this._message = null;
       this._view = null;
+      if (this._manage) {
+        this._manage.dialog.remove();
+        this._manage = null;
+        this._manageOpen = null;
+      }
       this._changed(next);
       this._render();
     }
