@@ -10,18 +10,22 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
 ## Features
 
 - **Build a template once, place it anywhere**: a Declutter Plus card only holds
-  a template name (and optional variable values). Change the template, every
-  card using it follows.
-- **Edited like Bubble Card pop-ups**: the left panel only holds the card's
-  settings; every action happens in the preview on the right.
+  a template name (and optional variable values). Edit the template from any
+  card that uses it: every card follows.
+- **Guided editor**: a new card opens a home screen to create a template or use
+  an existing one; an existing card only shows its own settings.
+- **Edited like Bubble Card pop-ups**, from the preview on the right:
   - **Add card** opens Home Assistant's card picker, then the card's own editor
     (visual or code). Any card works, including custom cards such as Bubble Card.
-  - **Import a section** copies all the cards of a dashboard section at once.
+  - **Import a section** copies every card and container of a dashboard section.
   - Each card of the template has Home Assistant's edit toolbar: edit,
     duplicate, copy, delete.
 - **Several cards per template**, side by side on a 12-column grid like a
   section. Set each card's width in the *Layout* tab of its editor.
-- **Shared or per-dashboard storage**, with automatic backup of shared templates.
+- **Manage templates** screen: rename, change storage, variables, delete, with
+  the number of cards using each template.
+- **Shared templates stored in Home Assistant's system data**: no hidden
+  dashboard, included in Home Assistant backups, plus an automatic backup.
 - **Optional variables** with real pickers (entity, icon, area…), to reuse one
   template with different values.
 - **Bubble Card pop-ups** behave like in a section: hidden until opened,
@@ -33,7 +37,8 @@ to [decluttering-card](https://github.com/custom-cards/decluttering-card).
 ## Requirements
 
 - Home Assistant **2026.6** or later.
-- Editing templates requires an **administrator**; every user can display them.
+- Creating and editing templates requires an **administrator**; every user can
+  display them.
 
 ## Installation
 
@@ -48,35 +53,37 @@ not the latest one after an update, clear the browser (or app) cache.
 
 ## Quick start
 
-1. Edit a dashboard › *Add card* › **Declutter Plus**.
-2. In the preview on the right, click **Add card** and pick a card, then
-   configure it in its usual editor and save. Or click **Import a section** to
-   copy a whole section.
-3. The template is created and selected. In the *Template* panel on the left,
-   set its name, storage and description.
-4. Click **Add card** again to add more cards. To change a card, use its edit
-   button in the preview; saving updates the template.
-5. Reuse it: add another Declutter Plus card and pick the template in the
-   gallery.
+1. Edit a dashboard › *Add card* › **Declutter Plus**. The home screen explains
+   the plugin and offers two choices.
+2. **Create a template**: give it a name (letters, digits, `_`, `-`), an optional
+   description and a storage (*Shared* by default), then **Create template**.
+3. Fill it from the preview on the right: **Add card** (card picker) or
+   **Import a section** (every card and container of a section). Edit a card
+   with its edit button; saving updates the template.
+4. Reuse it: add another Declutter Plus card and choose **Use an existing
+   template**.
 
 You can also copy a card (card menu › *Copy*), then choose
-**Declutter Plus: paste copied card** in *Add card* and click
-**Save as template** in the preview.
+**Declutter Plus: paste copied card** in *Add card*: the creation screen opens
+and the copied card becomes the first card of the new template.
 
 **The original cards are never changed**: a template is a copy. Delete the
 original cards yourself if you only want to keep the Declutter Plus version.
 
 ## Editor
 
-| Where | What |
-| --- | --- |
-| *Template* panel (left) | template gallery and search; name, storage and description of the selected template |
-| *Variables* panel (left) | values of this card's variables; **Make a setting variable…** and ✕ to manage the template's variables |
-| Preview (right) | **Add card**, **Import a section**, and the edit toolbar of each card |
+| Screen | When | What |
+| --- | --- | --- |
+| Home | new card | explanations, **Create a template**, **Use an existing template**, **Manage templates** |
+| New template | from Home | name, description, storage, how to fill the template |
+| Choose a template | from Home or **Change template** | gallery with thumbnails and search |
+| This card | existing card | the template used and **this card's variable values only**; **Change template**, **Manage templates** |
+| Manage templates | from Home or This card | every template with its number of cards and uses: rename, storage, description, variables, delete |
 
-Renaming, moving, editing a card or changing variables of a template is saved
-immediately. The *Save* button of Home Assistant saves this card (template
-choice and variable values).
+The preview on the right always holds **Add card**, **Import a section** and the
+edit toolbar of each card. Changes to a template (its cards, name, storage,
+variables) are saved immediately; the *Save* button of Home Assistant saves this
+card (template choice and variable values).
 
 ### Deleting
 
@@ -84,7 +91,10 @@ choice and variable values).
 | --- | --- |
 | Delete the Declutter Plus card from the dashboard (card menu) | Only this card is removed (Home Assistant offers *Undo*). The template is kept. |
 | In the preview, delete a card of the template | Removes it from the template, **for every card using it** (confirmation). |
-| In the preview, delete the last card of the template | Deletes the **template** (confirmation with the number of cards using it). |
+| In the preview, delete the last card, or **Delete** in *Manage templates* | Deletes the **template** (confirmation with the number of cards using it). |
+
+Renaming a template asks for confirmation too: other cards using the old name
+show *Template not found* until the template is chosen again.
 
 ## Variables
 
@@ -92,43 +102,37 @@ Variables are **optional**. Without them, a template always shows the same
 cards. They are useful to reuse one template with different values, for example
 one card per room with only the entity and the name changing.
 
-- Create one with *Variables › Make a setting variable…*: the current value
-  becomes the default value.
-- Set its value on each Declutter Plus card in the *Variables* panel.
-- Remove one with ✕: cards get the default value back.
+- In *Manage templates › Edit*, **Make a setting variable…** turns a setting of
+  the template's cards into a variable; its current value becomes the default.
+  ✕ removes a variable.
+- Each Declutter Plus card sets its own values in *This card*.
 
 ## Template storage
 
 | Storage | Where it is saved | Usable on |
 | --- | --- | --- |
+| **Shared** (default) | Home Assistant's system data (`.storage/frontend.system_data`) | every dashboard |
 | **This dashboard** | the current dashboard's configuration | this dashboard only |
-| **Shared** | a hidden dashboard *⚠ Declutter Plus – Templates (do not delete)*, used only as storage | every dashboard |
 
-- **Shared is the simplest choice** and has no noticeable performance cost (one
-  extra read when the page loads). Choose *This dashboard* only if you want the
-  templates to travel with that dashboard's configuration.
-- Enable shared storage from the *Template* panel of a selected template
-  (administrators). Until then, new templates are saved in the current
-  dashboard.
+- **Shared is the simplest choice.** It needs no dashboard, is read once when
+  the page loads and is then updated live, and is included in Home Assistant
+  backups. Choose *This dashboard* only if you want the templates to travel with
+  that dashboard's configuration.
 - Changing the storage of a template moves it. If both storages hold a template
   with the same name, the one of the current dashboard wins.
-- The storage dashboard shows every shared template with its default values. It
-  is rebuilt automatically: do not edit it by hand.
+- Shared templates are also **backed up automatically** in the administrator's
+  user data; if they are ever erased, the editor offers **Restore templates**.
+- Deleting a dashboard that stores templates (*This dashboard*) asks for
+  confirmation, in a browser tab where Declutter Plus is loaded.
 - Dashboards in YAML mode cannot be modified from the UI: use shared storage.
 
-### Protecting shared templates
+### Upgrading from 1.x
 
-Home Assistant cannot lock a dashboard, so Declutter Plus adds three safeguards:
-
-- the warning in the storage dashboard's title, visible in *Settings ›
-  Dashboards*;
-- deleting a dashboard that stores templates asks for confirmation (only in a
-  browser tab where Declutter Plus is loaded);
-- shared templates are **backed up automatically** in the administrator's Home
-  Assistant user data. If the storage dashboard is deleted, the Declutter Plus
-  editor offers **Restore templates**.
-
-Home Assistant backups also include the storage dashboard.
+Versions 1.x stored shared templates in a hidden dashboard. The first time an
+administrator opens a page with Declutter Plus 2.0, the templates are copied to
+the system data automatically, and that dashboard is emptied and renamed
+*Declutter Plus – old storage (can be deleted)*. You can then delete it in
+*Settings › Dashboards*.
 
 ## Card options
 
@@ -136,8 +140,8 @@ Home Assistant backups also include the storage dashboard.
 | --- | --- | --- | --- |
 | `template` | string | — | Template name |
 | `variables` | object or list | `{}` | Variable values (list form is decluttering-compatible) |
-| `library` | string | `declutter-plus` | URL path of the shared storage dashboard |
-| `paste` | card config | — | Set by the paste entry, removed once saved as a template |
+| `library` | string | `declutter-plus` | Name of a separate shared template library |
+| `paste` | card config | — | Set by the paste entry, removed once the template is created |
 
 ```yaml
 type: custom:declutter-plus-card
@@ -148,13 +152,14 @@ variables:
 
 Also available: `custom:declutter-plus-element` (picture-elements),
 `custom:declutter-plus-row` (entities card rows) and `custom:declutter-plus-grid`
-(the 12-column grid used by multi-card templates: `cards:` list, width from each
-card's `grid_options.columns`).
+(the 12-column grid used by templates: `cards:` list, width from each card's
+`grid_options.columns`).
 
 ## Template format
 
-Templates are stored under `declutter_plus_templates`, in the current dashboard
-or in the storage dashboard. The editor writes this format for you:
+Shared templates live in the system data key `declutter_plus`; templates stored
+in a dashboard live under `declutter_plus_templates` in its configuration. The
+editor writes this format for you:
 
 ```yaml
 declutter_plus_templates:
@@ -172,23 +177,11 @@ declutter_plus_templates:
     grid_options:           # optional: size of the Declutter Plus card
       columns: 6
     card:                   # or `element:` / `row:`
-      type: tile
-      entity: "[[entity]]"
-      name: "[[name]]"
-```
-
-A multi-card template uses the grid:
-
-```yaml
-    card:
       type: custom:declutter-plus-grid
       cards:
         - type: tile
-          entity: light.kitchen
-          grid_options:
-            columns: 6
-        - type: tile
-          entity: light.living_room
+          entity: "[[entity]]"
+          name: "[[name]]"
           grid_options:
             columns: 6
 ```
@@ -206,6 +199,6 @@ A multi-card template uses the grid:
 ## Migrating from decluttering-card
 
 Replace `custom:decluttering-card` with `custom:declutter-plus-card`: the
-dashboard's existing `decluttering_templates` keep working and appear in the
-gallery as *This dashboard (decluttering-card)*. To convert one, select it and
-choose *Shared* as storage in the *Template* panel.
+dashboard's existing `decluttering_templates` keep working and appear as
+*This dashboard (decluttering-card)*. To convert one, open *Manage templates*,
+edit it and choose *Shared* as storage.

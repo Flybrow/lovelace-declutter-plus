@@ -2,6 +2,39 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 2.0.0 — 17 septembre 2026
+
+### Stockage partagé sans dashboard caché
+
+- Les templates partagés sont désormais stockés dans les **données système de
+  Home Assistant** (lisibles par tous les utilisateurs, écrites par les
+  administrateurs, mises à jour en direct, incluses dans les sauvegardes Home
+  Assistant) au lieu d'un dashboard caché : plus de dashboard à protéger, plus de
+  vues à reconstruire, une seule lecture légère par chargement de page.
+- **Migration automatique** : la première fois qu'un administrateur ouvre une
+  page avec Declutter Plus 2.0, les templates de l'ancien dashboard caché sont
+  copiés ; ce dashboard est vidé et renommé *Declutter Plus – ancien stockage
+  (peut être supprimé)*. D'ici là, les autres utilisateurs continuent de lire
+  l'ancien dashboard.
+- L'option `library` désigne désormais une bibliothèque partagée séparée.
+
+### Éditeur guidé
+
+- **Écran d'accueil** pour une nouvelle carte : ce que fait le plugin,
+  **Créer un template**, **Utiliser un template existant**, **Gérer les
+  templates**.
+- **Écran de création** : nom, description, stockage, et comment remplir le
+  template (ajouter ou coller des cartes, importer une section avec ses
+  conteneurs, modifier depuis n'importe quelle page où le template est utilisé).
+- **Cette carte** : une carte existante n'affiche que le template qu'elle
+  utilise et ses propres valeurs de variables, avec **Changer de template** et
+  **Gérer les templates**.
+- **Gérer les templates** : tous les templates avec leur nombre de cartes et
+  d'utilisations ; renommer (avec avertissement pour les autres cartes),
+  stockage, description, variables, supprimer (avec confirmation).
+- Coller une carte copiée ouvre l'écran de création avec la carte comme première
+  carte.
+
 ## 1.8.2 — 13 septembre 2026
 
 ### Documentation
