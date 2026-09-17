@@ -2,17 +2,6 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
-## 2.1.0 — 17 September 2026
-
-- **decluttering-card templates offered for copy**: each time an administrator
-  opens the Declutter Plus editor, `decluttering_templates` of every dashboard
-  that are not in Declutter Plus yet are offered for copy into the shared
-  templates. The originals are never changed. **Later** asks again next time;
-  **Don't ask again** stops it (saved in the user's Home Assistant data). A name
-  already used by a different template gets the `_decluttering` suffix.
-- README: clearer wording that everything is done graphically, with no YAML to
-  write.
-
 ## 2.0.0 — 17 September 2026
 
 ### Shared storage without a hidden dashboard
@@ -40,6 +29,17 @@
   rename (with a warning for other cards), storage, description, variables,
   delete (with confirmation).
 - Pasting a copied card opens the creation screen with the card as first card.
+
+### decluttering-card and documentation
+
+- **decluttering-card templates offered for copy**: each time an administrator
+  opens the Declutter Plus editor, `decluttering_templates` of every dashboard
+  that are not in Declutter Plus yet are offered for copy into the shared
+  templates. The originals are never changed. **Later** asks again next time;
+  **Don't ask again** stops it (saved in the user's Home Assistant data). A name
+  already used by a different template gets the `_decluttering` suffix.
+- README: clearer wording that everything is done graphically, with no YAML to
+  write.
 
 ## 1.8.2 — 13 September 2026
 
