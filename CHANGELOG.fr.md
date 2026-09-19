@@ -2,6 +2,18 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 2.0.1 — 19 septembre 2026
+
+### Corrections
+
+- En mode YAML de l'éditeur de carte, un clic sur une carte du template dans
+  l'aperçu ouvre bien l'éditeur de cette carte, au lieu de l'erreur *no
+  Declutter Plus editor*.
+
+### Documentation
+
+- Les README changent de langue avec des badges en haut de page.
+
 ## 2.0.0 — 17 septembre 2026
 
 ### Stockage dans les données système de Home Assistant

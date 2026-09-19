@@ -1,6 +1,6 @@
 # Declutter Plus
 
-🇬🇧 **[English version](README.md)**
+[![English](https://img.shields.io/badge/lang-English-lightgrey)](README.md) [![Français](https://img.shields.io/badge/lang-Fran%C3%A7ais-blue)](README.fr.md)
 
 Templates de cartes Lovelace réutilisables pour Home Assistant — successeur
 moderne et graphique de [decluttering-card](https://github.com/custom-cards/decluttering-card).

@@ -2,6 +2,18 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 2.0.1 — 19 September 2026
+
+### Fixes
+
+- In YAML mode of the card editor, clicking a card of the template in the
+  preview now opens that card's editor, instead of the error *no Declutter Plus
+  editor*.
+
+### Documentation
+
+- The READMEs switch language with badges at the top.
+
 ## 2.0.0 — 17 September 2026
 
 ### Storage in Home Assistant's system data

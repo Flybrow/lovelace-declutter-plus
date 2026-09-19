@@ -6,9 +6,9 @@
 (function () {
   "use strict";
 
-  const VERSION = "2.0.0";
+  const VERSION = "2.0.1";
   // repère de build, changé à chaque publication d'une même version (cache navigateur)
-  const BUILD = "2026-09-17.7";
+  const BUILD = "2026-09-19.2";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -1970,7 +1970,7 @@
 
   // pendingDraft : template en cours de création (nom, description, stockage),
   // créé à la première carte ajoutée ou au clic sur Enregistrer de Home Assistant.
-  const previewBus = { editors: [], pendingDraft: null };
+  const previewBus = { editors: [], pendingDraft: null, headless: null };
 
   function setPendingDraft(draft) {
     previewBus.pendingDraft = draft;
@@ -1983,8 +1983,27 @@
   function previewAction(action, payload) {
     const editors = previewBus.editors;
     const editor = editors.length ? editors[editors.length - 1] : null;
-    if (editor) editor._previewAction(action, payload);
-    else showToast(tSub(resolveLang(null), "dialogUnavailable", { reason: "no Declutter Plus editor" }));
+    if (editor) {
+      editor._previewAction(action, payload);
+      return;
+    }
+    // En mode YAML, HA retire l'éditeur graphique : un éditeur détaché reprend
+    // les actions de l'aperçu (le template est écrit dans le stockage, pas ici).
+    const hass = payload && payload.hass;
+    const config = payload && payload.config;
+    if (!hass || !isObject(config)) {
+      showToast(tSub(resolveLang(hass || null), "dialogUnavailable", { reason: "no Declutter Plus editor" }));
+      return;
+    }
+    let headless = previewBus.headless;
+    if (!headless) {
+      headless = document.createElement(EDITOR_TAG);
+      headless._headless = true; // ni interface ni vérifications de fond
+      previewBus.headless = headless;
+    }
+    headless.setConfig(config);
+    headless.hass = hass;
+    headless._previewAction(action, payload);
   }
 
   // ---------------------------------------------------------------------------
@@ -2240,7 +2259,7 @@
           importBtn.className = "dp-add dp-import";
           importBtn.addEventListener("click", (ev) => {
             ev.stopPropagation();
-            previewAction("importSection", { config: this._config });
+            previewAction("importSection", { config: this._config, hass: this._hass });
           });
           this.shadowRoot.appendChild(importBtn);
         }
@@ -2254,7 +2273,7 @@
         btn.className = "dp-add";
         btn.addEventListener("click", (ev) => {
           ev.stopPropagation();
-          previewAction(btn.dataset.mode, { config: this._config });
+          previewAction(btn.dataset.mode, { config: this._config, hass: this._hass });
         });
         this.shadowRoot.insertBefore(btn, importBtn || null);
       }
@@ -2301,7 +2320,7 @@
           b.textContent = item[1];
           b.addEventListener("click", function (ev) {
             ev.stopPropagation();
-            previewAction(item[0], { config: self._config, index: index });
+            previewAction(item[0], { config: self._config, index: index, hass: self._hass });
           });
           tools.appendChild(b);
         });
@@ -2321,7 +2340,7 @@
         frame.addEventListener(type, function (ev) {
           ev.stopPropagation();
           const detail = ev.detail || {};
-          if (map[type]) previewAction(map[type], { config: self._config, index: index, gridOptions: detail.gridOptions });
+          if (map[type]) previewAction(map[type], { config: self._config, index: index, gridOptions: detail.gridOptions, hass: self._hass });
         });
       });
       frame.appendChild(child);
@@ -2610,6 +2629,11 @@
     set hass(hass) {
       const first = !this._hass;
       this._hass = hass;
+      if (this._headless) {
+        loadHelpers().catch(function () {});
+        loadLibrary(hass, this._path());
+        return;
+      }
       if (first) {
         installDeleteGuard(hass);
         this._checkDecluttering(hass);
@@ -2805,7 +2829,7 @@
     }
 
     _render() {
-      if (!this._hass) return;
+      if (!this._hass || this._headless) return;
       const lang = this._lang();
       this._lastLang = lang;
       this._built = true;
