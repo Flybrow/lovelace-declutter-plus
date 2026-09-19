@@ -2,6 +2,13 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 2.0.2 — 19 September 2026
+
+### Fixes
+
+- In YAML mode, the code editor now shows the opened card's code, and the
+  Declutter Plus card's code again when going back (it kept the previous code).
+
 ## 2.0.1 — 19 September 2026
 
 ### Fixes

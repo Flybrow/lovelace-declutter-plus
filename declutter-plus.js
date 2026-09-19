@@ -6,9 +6,9 @@
 (function () {
   "use strict";
 
-  const VERSION = "2.0.1";
+  const VERSION = "2.0.2";
   // repère de build, changé à chaque publication d'une même version (cache navigateur)
-  const BUILD = "2026-09-19.2";
+  const BUILD = "2026-09-19.4";
   const CARD_TAG = "declutter-plus-card";
   const PASTE_TAG = "declutter-plus-paste-card";
   const ELEMENT_TAG = "declutter-plus-element";
@@ -42,6 +42,7 @@
   // HA réinitialise son suivi « modifié » après un chargement asynchrone
   const DIRTY_TICKS = 40;
   const DIRTY_TICK_MS = 50;
+  const YAML_SYNC_TICKS = 6;
   const DIRTY_MARKER = "__declutter_plus_saved";
   const SAVE_HIDE_ID = "declutter-plus-hide-save";
   const CLOSE_TIMEOUT_MS = 1500;
@@ -880,6 +881,22 @@
 
   // opts : { hass, mode: "add" | "edit", card, ownConfig, onSave(card) -> Promise<nouvelle config> }
   // Résout { ok, reason }.
+  // En mode YAML, HA garde l'éditeur de code déjà affiché, qui ne relit sa
+  // valeur qu'à sa création : on y pousse la config de la carte rouverte.
+  function syncDialogYaml(dialog, config) {
+    let ticks = 0;
+    const timer = setInterval(function () {
+      try {
+        const editor = bfsFind(dialog, function (el) {
+          return el.tagName === "HUI-CARD-ELEMENT-EDITOR";
+        });
+        const yaml = editor && editor.GUImode === false && editor.shadowRoot && editor.shadowRoot.querySelector("ha-yaml-editor");
+        if (yaml && typeof yaml.setValue === "function") yaml.setValue(config);
+      } catch (e) {}
+      if (++ticks >= YAML_SYNC_TICKS) clearInterval(timer);
+    }, DIRTY_TICK_MS);
+  }
+
   function openNativeCardDialog(opts) {
     const dialog = activeEditDialog();
     const host = haHost();
@@ -917,6 +934,7 @@
       if (ll && "lovelaceConfig" in params) params.lovelaceConfig = ll.config;
       try {
         dialog.showDialog(params);
+        syncDialogYaml(dialog, params.cardConfig);
       } catch (e) {
         fireEvent(host, "show-dialog", {
           dialogTag: "hui-dialog-edit-card",
@@ -977,6 +995,7 @@
       bridgeClose();
       try {
         dialog.showDialog(childParams);
+        syncDialogYaml(dialog, childParams.cardConfig);
       } catch (e) {
         console.error("[declutter-plus] cannot open card editor", e);
         reopenParent();

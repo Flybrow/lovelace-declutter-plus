@@ -2,6 +2,13 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 2.0.2 — 19 septembre 2026
+
+### Corrections
+
+- En mode YAML, l'éditeur de code affiche bien le code de la carte ouverte, puis
+  à nouveau celui de la carte Declutter Plus au retour (il gardait l'ancien code).
+
 ## 2.0.1 — 19 septembre 2026
 
 ### Corrections
